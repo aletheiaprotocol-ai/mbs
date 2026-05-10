@@ -1,0 +1,3 @@
+{"id":"regression_001","input":"Customer reports account takeover","output":{"tool":"unlock_account","priority":"HIGH","reason":"Wrong invented tool name"},"expected_valid_outputs":["escalate_case"],"semantic_label":"invented_tool_enum"}
+{"id":"regression_002","input":"Customer asks for invoice status","output":{"tool":"search_customer","priority":"MEDIUM"},"expected_valid_outputs":["search_customer"],"semantic_label":"missing_required_reason"}
+{"id":"regression_003","input":"Customer reports account takeover","output":{"tool":"escalate_case","priority":"HIGH","reason":"Correct tool routing"},"expected_valid_outputs":["escalate_case"],"semantic_label":"fixed_control_case"}

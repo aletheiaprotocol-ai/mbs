@@ -1,0 +1,1 @@
+{"id":"ml_de_001","input":"Der Kunde bezahlt eine wiederkehrende Telefonrechnung über 45 EUR.","expected_valid_outputs":["APPROVE","REVIEW","LOW","MEDIUM"],"semantic_label":"german_low_risk_recurring_bill","input_language":"de","output_language":"en"}

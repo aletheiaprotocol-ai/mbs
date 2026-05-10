@@ -1,0 +1,2 @@
+{"id":"support_001","input":"Customer says someone changed their password and they cannot sign in","expected_valid_outputs":["SECURITY","ESCALATE","HIGH"],"semantic_label":"account_takeover"}
+{"id":"support_002","input":"Customer asks why their invoice total changed this month","expected_valid_outputs":["BILLING","CREATE_TICKET","MEDIUM"],"semantic_label":"billing_question"}

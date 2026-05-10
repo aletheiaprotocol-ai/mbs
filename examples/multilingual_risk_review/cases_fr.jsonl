@@ -1,0 +1,1 @@
+{"id":"ml_fr_001","input":"Le client transfère 6100 EUR vers un nouveau bénéficiaire après une alerte de connexion.","expected_valid_outputs":["REVIEW","BLOCK","ESCALATE","HIGH","CRITICAL"],"semantic_label":"french_high_risk_transfer","input_language":"fr","output_language":"en"}

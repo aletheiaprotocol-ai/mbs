@@ -1,0 +1,2 @@
+{"id":"tx_001","input":"Customer transfers 4800 EUR to a new beneficiary","expected_valid_outputs":["REVIEW","ESCALATE","BLOCK"],"semantic_label":"high_risk_new_beneficiary"}
+{"id":"tx_002","input":"Customer pays recurring utility bill of 42 EUR","expected_valid_outputs":["APPROVE","REVIEW"],"semantic_label":"low_risk_recurring_payment"}

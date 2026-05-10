@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mbs"
+version = "0.1.0"
+description = "Minimal Behavioral Specification tools for structured agent outputs"
+readme = "MBS_COMPILER_README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    {name = "Abdulmalek Saket", email = "aletheia@fenicebrand.com"}
+]
+keywords = ["llm", "agents", "structured-output", "json-schema", "validation", "mbs"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[project.scripts]
+mbs = "mbs.cli:main"
+mbs-compile = "mbs_compiler:main"
+
+[tool.setuptools.packages.find]
+include = ["mbs*"]
+
+[tool.setuptools]
+py-modules = ["mbs_compiler"]

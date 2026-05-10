@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": ["APPROVE", "REVIEW", "BLOCK", "ESCALATE"]
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    },
+    "reason": {
+      "type": "string"
+    }
+  },
+  "required": ["decision", "risk_level", "reason"]
+}

@@ -1,0 +1,1 @@
+{"id":"ml_tr_001","input":"Müşteri her ay ödediği elektrik faturası için 38 EUR ödeme yapıyor.","expected_valid_outputs":["APPROVE","REVIEW","LOW","MEDIUM"],"semantic_label":"turkish_low_risk_bill","input_language":"tr","output_language":"en"}

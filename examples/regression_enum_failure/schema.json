@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "tool": {
+      "type": "string",
+      "enum": ["search_customer", "create_ticket", "escalate_case"],
+      "description": "Tool to call"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH"],
+      "description": "Case priority"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for the tool choice"
+    }
+  },
+  "required": ["tool", "priority", "reason"]
+}

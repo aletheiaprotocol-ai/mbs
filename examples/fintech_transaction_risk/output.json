@@ -1,0 +1,6 @@
+{
+  "decision": "REVIEW",
+  "risk_level": "HIGH",
+  "reason": "High-value transfer to a new beneficiary.",
+  "human_review_required": false
+}

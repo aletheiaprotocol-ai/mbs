@@ -1,0 +1,102 @@
+# MBS Quickstart
+
+MBS turns a JSON Schema into a compact behavioral contract, validates model output, records a trace, and reports cost per valid structured output.
+
+The user-facing default is the `full` contract style because current benchmark
+evidence makes it the safest baseline. Use `--format natural` only when you are
+explicitly measuring compact/cheap contracts.
+
+## Install
+
+```bash
+python -m pip install -e . --no-deps
+```
+
+## Run The YC Demo
+
+```bash
+mbs demo
+```
+
+This prints one end-to-end flow: schema + prompt, minimal behavioral contract,
+model output, PASS / FAIL / REVIEW result, trace id, retry repair, and token
+comparison. To regenerate the sample benchmark and one-page evidence brief:
+
+```bash
+mbs demo --write-artifacts
+```
+
+## Compile A Contract
+
+```bash
+mbs compile examples/fintech_transaction_risk/schema.json
+```
+
+## Validate Output
+
+```bash
+mbs validate \
+  --schema examples/fintech_transaction_risk/schema.json \
+  --output examples/fintech_transaction_risk/output.json
+```
+
+## Check One Case
+
+```bash
+mbs check \
+  --schema examples/fintech_transaction_risk/schema.json \
+  --input "Customer transfers 4800 EUR to a new beneficiary" \
+  --model mock \
+  --json
+```
+
+## Run The Starter Benchmark
+
+```bash
+mbs bench --config benchmarks/models.yaml
+mbs report --results benchmarks/results/*.json --out benchmarks/results/local_report.md
+mbs report --results benchmarks/results/*.json --exclude-infra --require-traces --summary-only --out benchmarks/results/local_scorecard.md
+```
+
+The scorecard report ranks models with PASS / REVIEW / FAIL and lists the dominant failure types without printing every benchmark row. It also includes `clean_json_rate` and `format_risk`, so prose-wrapped JSON and reasoning text do not get hidden behind extraction-assisted schema-valid rates.
+
+## Run Regression Tests
+
+```bash
+mbs test \
+  --schemas examples/fintech_transaction_risk \
+  --cases examples/fintech_transaction_risk/cases.jsonl \
+  --models benchmarks/models.yaml
+```
+
+## Show Exact Failure Reasons
+
+```bash
+mbs bench \
+  --schema examples/regression_enum_failure/schema.json \
+  --cases examples/regression_enum_failure/cases.jsonl \
+  --out benchmarks/results/regression_enum_failure.json
+
+mbs report --results benchmarks/results/regression_enum_failure.json
+```
+
+This demo intentionally produces `invented_enum` and `missing_required_key` failures.
+
+For case-level failure export:
+
+```bash
+mbs triage \
+  --results benchmarks/results/*.json \
+  --max-failure-examples 40 \
+  --out benchmarks/results/triage_failure_examples.json
+```
+
+Compare against a known-good baseline:
+
+```bash
+mbs compare \
+  --baseline benchmarks/results/regression_enum_baseline.json \
+  --current benchmarks/results/regression_enum_failure.json
+```
+
+Current scope is local correctness and reproducibility. Real model adapters and Leonardo/MN5 jobs should start only after this harness is stable.

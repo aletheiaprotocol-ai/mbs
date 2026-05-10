@@ -1,0 +1,485 @@
+{
+  "schema": "support_agent_action",
+  "cases": 3,
+  "models": [
+    "precise_mock",
+    "cheap_mock"
+  ],
+  "note": "Deterministic local adapter sample for YC demo. Broad GPU results are tracked separately.",
+  "summary": {
+    "by_strategy": [
+      {
+        "strategy": "mbs_contract+retry",
+        "cases": 6,
+        "models": 2,
+        "schema_valid_rate": 1.0,
+        "semantic_correct_rate": 1.0,
+        "avg_retry_count": 0.3333,
+        "cost_per_valid_output_tokens": 121.833
+      },
+      {
+        "strategy": "verbose_prompt",
+        "cases": 6,
+        "models": 2,
+        "schema_valid_rate": 0.5,
+        "semantic_correct_rate": 0.5,
+        "avg_retry_count": 0.0,
+        "cost_per_valid_output_tokens": 385.0
+      }
+    ]
+  },
+  "rows": [
+    {
+      "case_id": "account_takeover",
+      "model": "precise_mock",
+      "strategy": "verbose_prompt",
+      "status": "PASS",
+      "schema_valid": true,
+      "semantic_correct": true,
+      "retry_count": 0,
+      "failure_type": null,
+      "tokens": {
+        "input_total": 151,
+        "mbs_contract": 151,
+        "verbose_baseline": 151,
+        "output": 41
+      },
+      "trace": {
+        "trace_id": "mbs_trace_9b8fc91e2bd8",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
+        "input_hash": "sha256:65438a2a587297f7048b70c6e26b1cd312efc64a08cc69cfae46aac5394636e5",
+        "output_hash": "sha256:fab5d64984c6e514e8f0231f0c6f6fd6599dabe786c8b71c5ea5860a55ea22c1",
+        "model": "precise_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "PASS",
+        "errors": [],
+        "tokens": {
+          "mbs_contract": 151,
+          "verbose_baseline": 151,
+          "output": 41
+        }
+      }
+    },
+    {
+      "case_id": "account_takeover",
+      "model": "precise_mock",
+      "strategy": "mbs_contract+retry",
+      "status": "PASS",
+      "schema_valid": true,
+      "semantic_correct": true,
+      "retry_count": 0,
+      "failure_type": null,
+      "tokens": {
+        "input_total": 49,
+        "mbs_contract": 49,
+        "verbose_baseline": 151,
+        "output": 41
+      },
+      "trace": {
+        "trace_id": "mbs_trace_e4e8c6a225e6",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
+        "input_hash": "sha256:65438a2a587297f7048b70c6e26b1cd312efc64a08cc69cfae46aac5394636e5",
+        "output_hash": "sha256:fab5d64984c6e514e8f0231f0c6f6fd6599dabe786c8b71c5ea5860a55ea22c1",
+        "model": "precise_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "PASS",
+        "errors": [],
+        "tokens": {
+          "mbs_contract": 49,
+          "verbose_baseline": 151,
+          "output": 41
+        }
+      }
+    },
+    {
+      "case_id": "double_charge",
+      "model": "precise_mock",
+      "strategy": "verbose_prompt",
+      "status": "PASS",
+      "schema_valid": true,
+      "semantic_correct": true,
+      "retry_count": 0,
+      "failure_type": null,
+      "tokens": {
+        "input_total": 151,
+        "mbs_contract": 151,
+        "verbose_baseline": 151,
+        "output": 43
+      },
+      "trace": {
+        "trace_id": "mbs_trace_d1aca7f32a11",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
+        "input_hash": "sha256:382bf94594648e4de1ecb75f4c66c54b6369552f133ec58d35aac5c299cb148a",
+        "output_hash": "sha256:fa92982d9ce5b6372941f912be0345a685aa6f348de7923a6783fcddffa896bd",
+        "model": "precise_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "PASS",
+        "errors": [],
+        "tokens": {
+          "mbs_contract": 151,
+          "verbose_baseline": 151,
+          "output": 43
+        }
+      }
+    },
+    {
+      "case_id": "double_charge",
+      "model": "precise_mock",
+      "strategy": "mbs_contract+retry",
+      "status": "PASS",
+      "schema_valid": true,
+      "semantic_correct": true,
+      "retry_count": 0,
+      "failure_type": null,
+      "tokens": {
+        "input_total": 49,
+        "mbs_contract": 49,
+        "verbose_baseline": 151,
+        "output": 43
+      },
+      "trace": {
+        "trace_id": "mbs_trace_210f1adaef2d",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
+        "input_hash": "sha256:382bf94594648e4de1ecb75f4c66c54b6369552f133ec58d35aac5c299cb148a",
+        "output_hash": "sha256:fa92982d9ce5b6372941f912be0345a685aa6f348de7923a6783fcddffa896bd",
+        "model": "precise_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "PASS",
+        "errors": [],
+        "tokens": {
+          "mbs_contract": 49,
+          "verbose_baseline": 151,
+          "output": 43
+        }
+      }
+    },
+    {
+      "case_id": "mobile_crash",
+      "model": "precise_mock",
+      "strategy": "verbose_prompt",
+      "status": "FAIL",
+      "schema_valid": false,
+      "semantic_correct": false,
+      "retry_count": 0,
+      "failure_type": "invalid_enum",
+      "tokens": {
+        "input_total": 151,
+        "mbs_contract": 151,
+        "verbose_baseline": 151,
+        "output": 42
+      },
+      "trace": {
+        "trace_id": "mbs_trace_2556ee0085f1",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
+        "input_hash": "sha256:71963dcafa96cdab983aa7f7bc327d3ac85d2de31d8646b31bb948ff100c1052",
+        "output_hash": "sha256:c2a344beee0f0f63270dcc47f180a0861c4e5f9935d08c1408dbcad80d5d1cb5",
+        "model": "precise_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "FAIL",
+        "errors": [
+          {
+            "field": "priority",
+            "type": "invalid_enum",
+            "received": "medium",
+            "allowed": [
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ],
+            "hint": "case_mismatch",
+            "suggested": "MEDIUM"
+          }
+        ],
+        "tokens": {
+          "mbs_contract": 151,
+          "verbose_baseline": 151,
+          "output": 42
+        }
+      }
+    },
+    {
+      "case_id": "mobile_crash",
+      "model": "precise_mock",
+      "strategy": "mbs_contract+retry",
+      "status": "PASS",
+      "schema_valid": true,
+      "semantic_correct": true,
+      "retry_count": 0,
+      "failure_type": null,
+      "tokens": {
+        "input_total": 49,
+        "mbs_contract": 49,
+        "verbose_baseline": 151,
+        "output": 42
+      },
+      "trace": {
+        "trace_id": "mbs_trace_4b7c0d6cd109",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
+        "input_hash": "sha256:71963dcafa96cdab983aa7f7bc327d3ac85d2de31d8646b31bb948ff100c1052",
+        "output_hash": "sha256:b2350e4649d10bd96ef28581b289df083b9cf9ad7200b1c50c04716fc0bb5f49",
+        "model": "precise_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "PASS",
+        "errors": [],
+        "tokens": {
+          "mbs_contract": 49,
+          "verbose_baseline": 151,
+          "output": 42
+        }
+      }
+    },
+    {
+      "case_id": "account_takeover",
+      "model": "cheap_mock",
+      "strategy": "verbose_prompt",
+      "status": "FAIL",
+      "schema_valid": false,
+      "semantic_correct": false,
+      "retry_count": 0,
+      "failure_type": "invalid_enum",
+      "tokens": {
+        "input_total": 151,
+        "mbs_contract": 151,
+        "verbose_baseline": 151,
+        "output": 47
+      },
+      "trace": {
+        "trace_id": "mbs_trace_1587310464fa",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
+        "input_hash": "sha256:65438a2a587297f7048b70c6e26b1cd312efc64a08cc69cfae46aac5394636e5",
+        "output_hash": "sha256:7e753fca8bc3bd808837f3b77f4b50ef2ac6533593056575650ca7d2f9160684",
+        "model": "cheap_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "FAIL",
+        "errors": [
+          {
+            "field": "action",
+            "type": "invalid_enum",
+            "received": "ANSWER|ESCALATE",
+            "allowed": [
+              "ANSWER",
+              "CREATE_TICKET",
+              "ESCALATE",
+              "REQUEST_INFO"
+            ],
+            "hint": "joined_enum_values",
+            "message": "Choose exactly one enum value, not multiple alternatives."
+          },
+          {
+            "field": "priority",
+            "type": "invalid_enum",
+            "received": "high",
+            "allowed": [
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ],
+            "hint": "case_mismatch",
+            "suggested": "HIGH"
+          }
+        ],
+        "tokens": {
+          "mbs_contract": 151,
+          "verbose_baseline": 151,
+          "output": 47
+        }
+      }
+    },
+    {
+      "case_id": "account_takeover",
+      "model": "cheap_mock",
+      "strategy": "mbs_contract+retry",
+      "status": "PASS",
+      "schema_valid": true,
+      "semantic_correct": true,
+      "retry_count": 1,
+      "failure_type": null,
+      "tokens": {
+        "input_total": 98,
+        "mbs_contract": 49,
+        "verbose_baseline": 151,
+        "output": 91
+      },
+      "trace": {
+        "trace_id": "mbs_trace_c63d36de060a",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
+        "input_hash": "sha256:65438a2a587297f7048b70c6e26b1cd312efc64a08cc69cfae46aac5394636e5",
+        "output_hash": "sha256:5eec83e59c7946e8f5b288d7caaafbe80e283f99c818af2c98fb27983ef52328",
+        "model": "cheap_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "PASS",
+        "errors": [],
+        "tokens": {
+          "mbs_contract": 49,
+          "verbose_baseline": 151,
+          "output": 91
+        }
+      }
+    },
+    {
+      "case_id": "double_charge",
+      "model": "cheap_mock",
+      "strategy": "verbose_prompt",
+      "status": "FAIL",
+      "schema_valid": false,
+      "semantic_correct": false,
+      "retry_count": 0,
+      "failure_type": "missing_required_key",
+      "tokens": {
+        "input_total": 151,
+        "mbs_contract": 151,
+        "verbose_baseline": 151,
+        "output": 34
+      },
+      "trace": {
+        "trace_id": "mbs_trace_c79a35184963",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
+        "input_hash": "sha256:382bf94594648e4de1ecb75f4c66c54b6369552f133ec58d35aac5c299cb148a",
+        "output_hash": "sha256:edcf8791c9f019cb7351961c12027e65e3026faef26db7260bacc5d949f7aa8d",
+        "model": "cheap_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "FAIL",
+        "errors": [
+          {
+            "field": "category",
+            "type": "missing_required_key"
+          }
+        ],
+        "tokens": {
+          "mbs_contract": 151,
+          "verbose_baseline": 151,
+          "output": 34
+        }
+      }
+    },
+    {
+      "case_id": "double_charge",
+      "model": "cheap_mock",
+      "strategy": "mbs_contract+retry",
+      "status": "PASS",
+      "schema_valid": true,
+      "semantic_correct": true,
+      "retry_count": 1,
+      "failure_type": null,
+      "tokens": {
+        "input_total": 98,
+        "mbs_contract": 49,
+        "verbose_baseline": 151,
+        "output": 80
+      },
+      "trace": {
+        "trace_id": "mbs_trace_a76ed5a1b437",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
+        "input_hash": "sha256:382bf94594648e4de1ecb75f4c66c54b6369552f133ec58d35aac5c299cb148a",
+        "output_hash": "sha256:602021cf6c0e84be7c502821b173e4134b6c6a45d608de7a0ff8bedf625f6b6c",
+        "model": "cheap_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "PASS",
+        "errors": [],
+        "tokens": {
+          "mbs_contract": 49,
+          "verbose_baseline": 151,
+          "output": 80
+        }
+      }
+    },
+    {
+      "case_id": "mobile_crash",
+      "model": "cheap_mock",
+      "strategy": "verbose_prompt",
+      "status": "PASS",
+      "schema_valid": true,
+      "semantic_correct": true,
+      "retry_count": 0,
+      "failure_type": null,
+      "tokens": {
+        "input_total": 151,
+        "mbs_contract": 151,
+        "verbose_baseline": 151,
+        "output": 42
+      },
+      "trace": {
+        "trace_id": "mbs_trace_ddfe69f4a4a9",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
+        "input_hash": "sha256:71963dcafa96cdab983aa7f7bc327d3ac85d2de31d8646b31bb948ff100c1052",
+        "output_hash": "sha256:b2350e4649d10bd96ef28581b289df083b9cf9ad7200b1c50c04716fc0bb5f49",
+        "model": "cheap_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "PASS",
+        "errors": [],
+        "tokens": {
+          "mbs_contract": 151,
+          "verbose_baseline": 151,
+          "output": 42
+        }
+      }
+    },
+    {
+      "case_id": "mobile_crash",
+      "model": "cheap_mock",
+      "strategy": "mbs_contract+retry",
+      "status": "PASS",
+      "schema_valid": true,
+      "semantic_correct": true,
+      "retry_count": 0,
+      "failure_type": null,
+      "tokens": {
+        "input_total": 49,
+        "mbs_contract": 49,
+        "verbose_baseline": 151,
+        "output": 42
+      },
+      "trace": {
+        "trace_id": "mbs_trace_acae3475a39a",
+        "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
+        "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
+        "input_hash": "sha256:71963dcafa96cdab983aa7f7bc327d3ac85d2de31d8646b31bb948ff100c1052",
+        "output_hash": "sha256:b2350e4649d10bd96ef28581b289df083b9cf9ad7200b1c50c04716fc0bb5f49",
+        "model": "cheap_mock",
+        "mbs_version": "0.1.0",
+        "validator_version": "json_schema_v1",
+        "timestamp": "2026-05-04T09:22:07Z",
+        "status": "PASS",
+        "errors": [],
+        "tokens": {
+          "mbs_contract": 49,
+          "verbose_baseline": 151,
+          "output": 42
+        }
+      }
+    }
+  ]
+}

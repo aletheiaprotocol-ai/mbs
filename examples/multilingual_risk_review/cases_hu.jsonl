@@ -1,0 +1,1 @@
+{"id":"ml_hu_001","input":"Az ügyfél új kedvezményezettnek küld 4900 EUR-t, és a bejelentkezés szokatlan országból történt.","expected_valid_outputs":["REVIEW","BLOCK","ESCALATE","HIGH","CRITICAL"],"semantic_label":"hungarian_high_risk_login","input_language":"hu","output_language":"en"}

@@ -1,0 +1,5 @@
+{
+  "tool": "escalate_case",
+  "priority": "HIGH",
+  "reason": "The customer reports account takeover risk."
+}

@@ -1,0 +1,1 @@
+{"id":"ml_ar_001","input":"يحاول العميل تحويل 5200 يورو إلى مستفيد جديد بعد تغيير كلمة المرور من بلد غير معتاد.","expected_valid_outputs":["REVIEW","BLOCK","ESCALATE","HIGH","CRITICAL"],"semantic_label":"arabic_high_risk_new_beneficiary","input_language":"ar","output_language":"en"}

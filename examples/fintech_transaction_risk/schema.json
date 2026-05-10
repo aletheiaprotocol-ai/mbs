@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "properties": {
+    "decision": {
+      "type": "string",
+      "enum": ["APPROVE", "REVIEW", "BLOCK", "ESCALATE"],
+      "description": "Transaction decision"
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+      "description": "Risk level"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for the decision"
+    },
+    "human_review_required": {
+      "type": "boolean",
+      "description": "Whether a human should review"
+    }
+  },
+  "required": ["decision", "risk_level", "reason", "human_review_required"]
+}

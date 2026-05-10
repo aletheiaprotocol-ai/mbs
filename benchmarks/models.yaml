@@ -1,0 +1,13 @@
+model: mock
+schema: examples/fintech_transaction_risk/schema.json
+cases: examples/fintech_transaction_risk/cases.jsonl
+prompt_styles:
+  - natural
+  - progressive
+decoding_modes:
+  - local_mock
+languages:
+  - en
+  - ar
+  - tr
+  - hu

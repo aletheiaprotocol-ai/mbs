@@ -1,0 +1,1 @@
+{"id":"ml_es_001","input":"El cliente paga una factura recurrente de agua de 32 EUR.","expected_valid_outputs":["APPROVE","REVIEW","LOW","MEDIUM"],"semantic_label":"spanish_low_risk_bill","input_language":"es","output_language":"en"}

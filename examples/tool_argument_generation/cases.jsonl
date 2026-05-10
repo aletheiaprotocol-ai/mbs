@@ -1,0 +1,2 @@
+{"id":"tool_001","input":"Customer reports possible account takeover and cannot access account","expected_valid_outputs":["escalate_case"],"semantic_label":"security_escalation"}
+{"id":"tool_002","input":"Customer asks for last invoice status","expected_valid_outputs":["search_customer"],"semantic_label":"lookup_customer"}

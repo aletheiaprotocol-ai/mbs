@@ -1,0 +1,2 @@
+{"id":"ml_en_high_001","input":"Customer transfers 5200 EUR to a new beneficiary after a password reset from an unusual country.","expected_valid_outputs":["REVIEW","BLOCK","ESCALATE","HIGH","CRITICAL"],"semantic_label":"english_high_risk_new_beneficiary","input_language":"en","output_language":"en"}
+{"id":"ml_en_low_001","input":"Customer pays a recurring water bill of 32 EUR to a known merchant.","expected_valid_outputs":["APPROVE","REVIEW","LOW","MEDIUM"],"semantic_label":"english_low_risk_bill","input_language":"en","output_language":"en"}

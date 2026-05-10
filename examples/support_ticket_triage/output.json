@@ -1,0 +1,6 @@
+{
+  "category": "SECURITY",
+  "priority": "HIGH",
+  "next_action": "ESCALATE",
+  "reason": "The customer reports a possible account takeover and needs urgent review."
+}

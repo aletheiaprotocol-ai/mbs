@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": ["BILLING", "SECURITY", "BUG", "ACCOUNT", "OTHER"],
+      "description": "Support category"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH"],
+      "description": "Ticket priority"
+    },
+    "next_action": {
+      "type": "string",
+      "enum": ["ANSWER", "CREATE_TICKET", "ESCALATE", "REQUEST_INFO"],
+      "description": "Next support action"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for the triage decision"
+    }
+  },
+  "required": ["category", "priority", "next_action", "reason"]
+}

@@ -1,0 +1,3 @@
+{"id":"baseline_001","input":"Customer reports account takeover","output":{"tool":"escalate_case","priority":"HIGH","reason":"Correct security escalation"},"expected_valid_outputs":["escalate_case"],"semantic_label":"security_escalation"}
+{"id":"baseline_002","input":"Customer asks for invoice status","output":{"tool":"search_customer","priority":"MEDIUM","reason":"Correct customer lookup"},"expected_valid_outputs":["search_customer"],"semantic_label":"invoice_lookup"}
+{"id":"baseline_003","input":"Customer asks to open a general ticket","output":{"tool":"create_ticket","priority":"LOW","reason":"Correct ticket creation"},"expected_valid_outputs":["create_ticket"],"semantic_label":"general_ticket"}

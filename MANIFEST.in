@@ -1,0 +1,7 @@
+include LICENSE
+include MBS_COMPILER_README.md
+include mbs_compiler.py
+recursive-include mbs *.py
+prune tests
+include tests/test_mbs_compiler.py
+include tests/test_mbs_product.py
