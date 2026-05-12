@@ -88,9 +88,31 @@ mbs agent-tools --list
 - `docs/mbs_evidence_brief.md`
 - `docs/mbs_quickstart.md`
 - `docs/mbs_bench.md`
+- `docs/mbs_public_benchmark_report.md`
 - `docs/mbs_lang.md`
 - `docs/mbs_model_behavior_guidance.md`
 - `docs/mbs_agent_tools.md`
+
+## Why Not Just Validate JSON?
+
+A JSON validator can say whether output parses and matches field types. MBS also
+tracks whether the model chose the right enum, omitted required fields, wrapped
+JSON in prose, emitted reasoning instead of JSON, produced valid JSON with the
+wrong business decision, or became more expensive after retry. That is the
+difference between syntax checking and structured-agent-output testing.
+
+## Use In CI
+
+Run MBS before deploying an agent that calls tools or updates records:
+
+```bash
+mbs bench --config benchmarks/models.yaml --out benchmarks/results/ci_bench.json
+mbs report --results benchmarks/results/ci_bench.json --exclude-infra --require-traces --summary-only
+```
+
+Treat easy local mock runs as install/software checks. Treat real-model,
+multi-schema, multi-case runs as benchmark evidence only when result JSON files,
+trace coverage, failure examples, and cost-per-valid-output reports exist.
 
 ## Positioning
 

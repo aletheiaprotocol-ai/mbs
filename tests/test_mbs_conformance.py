@@ -7,6 +7,7 @@ from mbs.agent_tools import AgentToolError
 from mbs.bench import run_benchmark, run_benchmark_matrix, summarize
 from mbs.cli import main
 from mbs.compiler import compile_schema, load_schema, schema_hash
+from mbs.compare import compare_results
 from mbs.cost import report_cost
 from mbs.report import aggregate_results, expand_paths
 from mbs.trace import create_trace
@@ -190,6 +191,105 @@ def test_report_expands_result_directory_to_json_files(tmp_path):
     assert files == [(result_dir / "one.json").resolve()]
     assert report["summary"]["rows"] == 1
     assert report["summary"]["infra_failed_rows"] == 0
+
+
+def test_report_counts_matrix_case_traces(tmp_path):
+    result_file = tmp_path / "matrix.json"
+    trace = {"trace_id": "mbs_trace_abc", "tokens": {"mbs_contract": 10, "output": 5}}
+    payload = {
+        "summary": {"runs": 1, "schema_valid_rate": 1.0, "semantic_correct_rate": 1.0, "clean_json_rate": 1.0},
+        "runs": [
+            {
+                "schema": "schema-a.json",
+                "model": "model-a",
+                "prompt_style": "full",
+                "decoding_mode": "local_mock",
+                "language": "default",
+                "runs": 1,
+                "schema_valid_rate": 1.0,
+                "semantic_correct_rate": 1.0,
+                "clean_json_rate": 1.0,
+            }
+        ],
+        "rows": [
+            {
+                "schema": "schema-a.json",
+                "case_id": "case-1",
+                "model": "model-a",
+                "prompt_style": "full",
+                "decoding_mode": "local_mock",
+                "language": "default",
+                "status": "PASS",
+                "json_valid": True,
+                "schema_valid": True,
+                "semantic_correct": True,
+                "trace": trace,
+                "tokens": trace["tokens"],
+            }
+        ],
+    }
+    result_file.write_text(json.dumps(payload), encoding="utf-8")
+
+    report = aggregate_results([result_file])
+
+    assert report["summary"]["traceable_case_rows"] == 1
+    assert report["summary"]["missing_trace_rows"] == 0
+    assert report["summary"]["uncheckable_result_rows"] == 0
+
+
+def test_compare_no_match_is_not_pass(tmp_path):
+    baseline = tmp_path / "baseline.json"
+    current = tmp_path / "current.json"
+    base_payload = {
+        "schema": "schema-a.json",
+        "model": "model-a",
+        "prompt_style": "natural",
+        "decoding_mode": "local_mock",
+        "language": "default",
+        "summary": {"runs": 1, "schema_valid_rate": 1.0, "semantic_correct_rate": 1.0, "enum_accuracy": 1.0},
+        "rows": [{"trace": {"trace_id": "a", "tokens": {"output": 1}}, "schema_valid": True}],
+    }
+    current_payload = {
+        **base_payload,
+        "prompt_style": "strict",
+        "rows": [{"trace": {"trace_id": "b", "tokens": {"output": 1}}, "schema_valid": True}],
+    }
+    baseline.write_text(json.dumps(base_payload), encoding="utf-8")
+    current.write_text(json.dumps(current_payload), encoding="utf-8")
+
+    result = compare_results([baseline], [current])
+
+    assert result["status"] == "NO_MATCH"
+    assert result["comparisons"] == []
+    assert result["missing_baseline"]
+
+
+def test_compare_can_match_prompt_style_ablation(tmp_path):
+    baseline = tmp_path / "baseline.json"
+    current = tmp_path / "current.json"
+    base_payload = {
+        "schema": "schema-a.json",
+        "model": "model-a",
+        "prompt_style": "natural",
+        "decoding_mode": "local_mock",
+        "language": "default",
+        "summary": {"runs": 2, "schema_valid_rate": 0.0, "semantic_correct_rate": 0.5, "enum_accuracy": 0.0},
+        "rows": [{"trace": {"trace_id": "a", "tokens": {"output": 1}}, "schema_valid": False}],
+    }
+    current_payload = {
+        **base_payload,
+        "prompt_style": "strict",
+        "summary": {"runs": 2, "schema_valid_rate": 1.0, "semantic_correct_rate": 0.5, "enum_accuracy": 1.0},
+        "rows": [{"trace": {"trace_id": "b", "tokens": {"output": 1}}, "schema_valid": True}],
+    }
+    baseline.write_text(json.dumps(base_payload), encoding="utf-8")
+    current.write_text(json.dumps(current_payload), encoding="utf-8")
+
+    result = compare_results([baseline], [current], key_fields=["schema", "model", "decoding_mode", "language"])
+
+    assert result["status"] == "PASS"
+    assert result["key_fields"] == ["schema", "model", "decoding_mode", "language"]
+    assert any(item["metric"] == "schema_valid_rate" and item["delta"] == 1.0 for item in result["comparisons"])
 
 
 def test_run_benchmark_matrix_supports_multiple_schemas_and_language_dict(tmp_path):

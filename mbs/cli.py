@@ -108,6 +108,10 @@ def main(argv: list[str] | None = None) -> int:
     p_compare.add_argument("--baseline", nargs="+", required=True, help="Baseline result JSON files or globs")
     p_compare.add_argument("--current", nargs="+", required=True, help="Current result JSON files or globs")
     p_compare.add_argument("--metric", action="append", help="Metric to compare. Can be repeated.")
+    p_compare.add_argument(
+        "--match-on",
+        help="Comma-separated row identity fields. Default: schema,model,prompt_style,decoding_mode,language",
+    )
     p_compare.add_argument("--max-drop", type=float, default=0.0)
     p_compare.add_argument("--out", help="JSON comparison output path")
     p_compare.add_argument("--json", action="store_true")
@@ -377,7 +381,8 @@ def _cmd_report(args: argparse.Namespace) -> int:
 
 
 def _cmd_compare(args: argparse.Namespace) -> int:
-    result = compare_results(args.baseline, args.current, metrics=args.metric, max_drop=args.max_drop)
+    key_fields = [item.strip() for item in args.match_on.split(",") if item.strip()] if args.match_on else None
+    result = compare_results(args.baseline, args.current, metrics=args.metric, max_drop=args.max_drop, key_fields=key_fields)
     if args.json:
         _print_json(result)
     else:

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "mbs"
 version = "0.1.0"
 description = "Minimal Behavioral Specification tools for structured agent outputs"
-readme = "MBS_COMPILER_README.md"
+readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 authors = [

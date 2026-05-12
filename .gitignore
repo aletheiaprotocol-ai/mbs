@@ -5,3 +5,8 @@ build/
 dist/
 .pytest_cache/
 .venv/
+.clean_install_venv/
+benchmarks/results/clean_install_*.json
+benchmarks/results/clean_install_*.md
+benchmarks/results/ci_*.json
+benchmarks/results/ci_*.md

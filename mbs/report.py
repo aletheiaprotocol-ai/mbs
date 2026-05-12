@@ -297,7 +297,23 @@ def _rows_from_payload(payload: Any, source: str) -> list[dict[str, Any]]:
     if not isinstance(payload, dict):
         return []
     if isinstance(payload.get("runs"), list):
-        return [_normalize_row(row, source) for row in payload["runs"] if isinstance(row, dict)]
+        trace_counts = _trace_counts_by_run(payload)
+        rows = []
+        for run in payload["runs"]:
+            if not isinstance(run, dict):
+                continue
+            row = dict(run)
+            counts = trace_counts.get(_run_key(row))
+            if counts is not None:
+                row.setdefault("traceable_case_rows", counts["traceable_case_rows"])
+                row.setdefault("missing_trace_rows", counts["missing_trace_rows"])
+                row.setdefault("uncheckable_result_rows", counts["uncheckable_result_rows"])
+            else:
+                row.setdefault("traceable_case_rows", 0)
+                row.setdefault("missing_trace_rows", 0)
+                row.setdefault("uncheckable_result_rows", 1)
+            rows.append(_normalize_row(row, source))
+        return rows
     if isinstance(payload.get("summary"), dict):
         row = dict(payload["summary"])
         case_rows = [item for item in payload.get("rows", []) if isinstance(item, dict)]
@@ -369,6 +385,34 @@ def _trace_counts(payload: dict[str, Any]) -> dict[str, int]:
         else:
             missing += 1
     return {"traceable_case_rows": traceable, "missing_trace_rows": missing, "uncheckable_result_rows": 0}
+
+
+def _trace_counts_by_run(payload: dict[str, Any]) -> dict[tuple[str, str, str, str, str], dict[str, int]]:
+    rows = payload.get("rows")
+    if not isinstance(rows, list):
+        return {}
+    grouped: dict[tuple[str, str, str, str, str], dict[str, int]] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        key = _run_key(row)
+        counts = grouped.setdefault(key, {"traceable_case_rows": 0, "missing_trace_rows": 0, "uncheckable_result_rows": 0})
+        trace = row.get("trace")
+        if isinstance(trace, dict) and trace.get("trace_id") and trace.get("tokens"):
+            counts["traceable_case_rows"] += 1
+        else:
+            counts["missing_trace_rows"] += 1
+    return grouped
+
+
+def _run_key(row: dict[str, Any]) -> tuple[str, str, str, str, str]:
+    return (
+        str(row.get("schema") or ""),
+        str(row.get("model") or ""),
+        str(row.get("prompt_style") or ""),
+        str(row.get("decoding_mode") or ""),
+        str(row.get("language") or ""),
+    )
 
 
 def _infra_failure_from_rows(payload: dict[str, Any]) -> str | None:

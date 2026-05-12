@@ -9,6 +9,8 @@ explicitly measuring compact/cheap contracts.
 ## Install
 
 ```bash
+git clone https://github.com/aletheiaprotocol-ai/mbs.git
+cd mbs
 python -m pip install -e . --no-deps
 ```
 
@@ -60,6 +62,15 @@ mbs report --results benchmarks/results/*.json --exclude-infra --require-traces 
 
 The scorecard report ranks models with PASS / REVIEW / FAIL and lists the dominant failure types without printing every benchmark row. It also includes `clean_json_rate` and `format_risk`, so prose-wrapped JSON and reasoning text do not get hidden behind extraction-assisted schema-valid rates.
 
+This starter benchmark is an install/software check. It is intentionally small
+and uses a local mock adapter. Do not treat it as hard model evidence. For hard
+evidence, use multiple schemas, multiple cases, real model families/weights,
+prompt-style comparisons, retry/no-retry comparisons, trace coverage, and
+failure examples.
+
+See `docs/mbs_public_benchmark_report.md` for the current public benchmark
+discipline and example report format.
+
 ## Run Regression Tests
 
 ```bash
@@ -98,6 +109,20 @@ mbs compare \
   --baseline benchmarks/results/regression_enum_baseline.json \
   --current benchmarks/results/regression_enum_failure.json
 ```
+
+For prompt-style ablations, the prompt style intentionally changes. In that
+case, match on stable identity fields while keeping prompt style visible as the
+changed dimension:
+
+```bash
+mbs compare \
+  --baseline benchmarks/results/natural/*.json \
+  --current benchmarks/results/strict/*.json \
+  --match-on schema,model,decoding_mode,language
+```
+
+If no rows match, `mbs compare` returns `NO_MATCH` and exits nonzero. This
+prevents an empty comparison from being mistaken for a passing regression check.
 
 Current scope is local correctness and reproducibility. Real model adapters
 should start only after this harness is stable.

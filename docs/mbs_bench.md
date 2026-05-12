@@ -116,3 +116,34 @@ prompt_injection_followed
 
 Use local/dev runs for harness validation. Scale model runs only after configs,
 cases, semantic labels, and result schemas are stable.
+
+Before claiming benchmark evidence, verify all of the following:
+
+1. result JSON files exist;
+2. `mbs report` generated successfully;
+3. infrastructure failures are separated from model behavior rows;
+4. model family and weight are listed;
+5. prompt style, language, temperature, seed, and retry policy are recorded;
+6. PASS / REVIEW / FAIL is explained;
+7. representative failure examples are exported with `mbs triage`;
+8. cost per valid output is reported;
+9. the exact reproduction command is documented.
+
+An easy local mock benchmark is useful, but it is not enough for model claims.
+Hard benchmark suites should include invalid JSON, wrong enum values, invented
+enum values, missing required fields, wrong types, extra keys, valid JSON with
+wrong decisions, prose-wrapped JSON, reasoning prose, retry improvements, retry
+regressions, clean JSON rate, semantic correctness, and cost per valid output.
+
+Use `mbs compare --match-on ...` for controlled ablations where one dimension
+changes intentionally. For example, when comparing `natural` prompting against
+`strict` MBS contracts, exclude `prompt_style` from the match key:
+
+```bash
+mbs compare \
+  --baseline benchmarks/results/natural/*.json \
+  --current benchmarks/results/strict/*.json \
+  --match-on schema,model,decoding_mode,language
+```
+
+If no comparable rows match, MBS reports `NO_MATCH` instead of `PASS`.
