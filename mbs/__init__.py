@@ -1,5 +1,6 @@
 """MBS: Minimal Behavioral Specification for structured agent outputs."""
 
+from .agent_tools import call_agent_tool, handle_agent_tool_request, list_agent_tools, mock_agent_output
 from .compiler import (
     classify_enum,
     compile_schema,
@@ -22,6 +23,7 @@ __all__ = [
     "aggregate_results",
     "audit_retry_attempts",
     "build_retry_prompt",
+    "call_agent_tool",
     "classify_enum",
     "check",
     "compare_results",
@@ -33,9 +35,12 @@ __all__ = [
     "format_report",
     "format_triage",
     "failure_summary",
+    "handle_agent_tool_request",
+    "list_agent_tools",
     "load_model_registry",
     "load_schema",
     "markdown_report",
+    "mock_agent_output",
     "model_scorecards",
     "report_cost",
     "retry_guidance",

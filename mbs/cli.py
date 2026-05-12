@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from .agent_tools import AgentToolError, call_agent_tool, handle_agent_tool_request, list_agent_tools
 from .bench import mock_output, run_benchmark, run_benchmark_matrix
 from .compare import compare_results, format_compare, write_compare_json
 from .compiler import canonical_json, compile_schema, estimate_tokens, format_report, load_schema
@@ -137,6 +138,13 @@ def main(argv: list[str] | None = None) -> int:
     p_triage.add_argument("--out")
     p_triage.add_argument("--json", action="store_true")
 
+    p_agent_tools = sub.add_parser("agent-tools", help="Expose MBS as JSON-callable agent tools")
+    p_agent_tools.add_argument("--list", action="store_true", help="List available MBS agent tools")
+    p_agent_tools.add_argument("--call", help="Call a tool by name, for example mbs.check")
+    p_agent_tools.add_argument("--args", default="{}", help="JSON object or path containing tool arguments")
+    p_agent_tools.add_argument("--request", help="JSON object or path with {tool/name, arguments}")
+    p_agent_tools.add_argument("--json", action="store_true")
+
     args = parser.parse_args(argv)
     if not args.command:
         parser.print_help()
@@ -170,6 +178,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_models(args)
     if args.command == "triage":
         return _cmd_triage(args)
+    if args.command == "agent-tools":
+        return _cmd_agent_tools(args)
     raise AssertionError(args.command)
 
 
@@ -437,6 +447,29 @@ def _cmd_triage(args: argparse.Namespace) -> int:
     return 0 if result["status"] == "PASS" else 2
 
 
+def _cmd_agent_tools(args: argparse.Namespace) -> int:
+    try:
+        if args.list or (not args.call and not args.request):
+            payload: Any = list_agent_tools()
+        elif args.request:
+            request = _load_config(args.request)
+            payload = handle_agent_tool_request(request)
+        elif args.call:
+            arguments = _load_config(args.args)
+            payload = {"tool": args.call, "result": call_agent_tool(args.call, arguments)}
+        else:
+            raise SystemExit("mbs agent-tools requires --list, --call, or --request")
+    except AgentToolError as exc:
+        raise SystemExit(str(exc)) from exc
+
+    if args.json or args.call or args.request:
+        _print_json(payload)
+    else:
+        for tool in payload:
+            print(f"{tool['name']}: {tool['description']}")
+    return 0
+
+
 def _load_json_or_inline(value: str) -> Any:
     p = Path(value)
     if p.exists():
@@ -457,6 +490,9 @@ def _load_config(value: str) -> dict[str, Any]:
     else:
         text = value
         suffix = ""
+    stripped = text.strip()
+    if len(stripped) >= 2 and stripped[0] == stripped[-1] and stripped[0] in {"'", '"'}:
+        text = stripped[1:-1]
     if suffix in {".yaml", ".yml"}:
         return _load_yaml_text(text)
     try:

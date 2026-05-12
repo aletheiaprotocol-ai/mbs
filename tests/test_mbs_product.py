@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from mbs import check, report_cost, validate_output
+from mbs import call_agent_tool, check, handle_agent_tool_request, list_agent_tools, report_cost, validate_output
 from mbs.bench import run_benchmark_matrix
 from mbs.cli import main
 from mbs.compare import compare_results, format_compare
@@ -105,6 +105,66 @@ def test_check_api_trace_and_cost():
     assert result["trace"]["tokens"]["output"] > 0
     assert cost["valid_outputs"] == 1
     assert cost["cost_per_valid_output_tokens"] is not None
+
+
+def test_agent_tools_expose_json_callable_check():
+    tools = list_agent_tools()
+    names = {tool["name"] for tool in tools}
+
+    result = call_agent_tool(
+        "mbs.check",
+        {
+            "schema": SCHEMA,
+            "input": "Customer sends a high-risk transfer",
+            "output": {"decision": "REVIEW", "risk_level": "HIGH", "reason": "high risk"},
+            "model": "agent-runtime",
+        },
+    )
+
+    assert {"mbs.compile", "mbs.validate", "mbs.check", "mbs.trace", "mbs.cost"} <= names
+    assert result["status"] == "PASS"
+    assert result["trace"]["model"] == "agent-runtime"
+    assert result["trace"]["trace_id"].startswith("mbs_trace_")
+
+
+def test_agent_tool_request_supports_validate():
+    response = handle_agent_tool_request(
+        {
+            "tool": "mbs.validate",
+            "arguments": {
+                "schema": SCHEMA,
+                "output": {"decision": "ALLOW", "risk_level": "LOW", "reason": "bad enum"},
+            },
+        }
+    )
+
+    assert response["tool"] == "mbs.validate"
+    assert response["result"]["schema_valid"] is False
+    assert response["result"]["errors"][0]["type"] == "invented_enum"
+
+
+def test_cli_agent_tools_lists_and_calls(tmp_path, capsys):
+    schema_path = tmp_path / "schema.json"
+    schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")
+
+    assert main(["agent-tools", "--list"]) == 0
+    assert "mbs.check" in capsys.readouterr().out
+
+    args_path = tmp_path / "args.json"
+    args_path.write_text(
+        json.dumps(
+            {
+                "schema_path": str(schema_path),
+                "output": {"decision": "REVIEW", "risk_level": "HIGH", "reason": "manual review"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["agent-tools", "--call", "mbs.validate", "--args", str(args_path)]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["tool"] == "mbs.validate"
+    assert payload["result"]["status"] == "PASS"
 
 
 def test_cost_accounts_for_retry_input_tokens():

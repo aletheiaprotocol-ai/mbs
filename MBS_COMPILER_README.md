@@ -69,6 +69,7 @@ mbs validate --schema examples/fintech_transaction_risk/schema.json --output exa
 mbs check --schema examples/fintech_transaction_risk/schema.json --input "Customer transfers 4800 EUR to a new beneficiary" --model mock
 mbs bench --config benchmarks/models.yaml
 mbs report --results benchmarks/results/*.json --exclude-infra --require-traces --summary-only
+mbs agent-tools --list
 ```
 
 ## Docs
@@ -78,3 +79,4 @@ mbs report --results benchmarks/results/*.json --exclude-infra --require-traces 
 - `docs/mbs_bench.md`
 - `docs/mbs_lang.md`
 - `docs/mbs_model_behavior_guidance.md`
+- `docs/mbs_agent_tools.md`

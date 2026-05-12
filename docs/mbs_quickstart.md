@@ -101,3 +101,11 @@ mbs compare \
 
 Current scope is local correctness and reproducibility. Real model adapters
 should start only after this harness is stable.
+
+## Use From Agent Runtimes
+
+```bash
+mbs agent-tools --list
+```
+
+For Python wrappers and MCP-style integrations, see `docs/mbs_agent_tools.md`.
