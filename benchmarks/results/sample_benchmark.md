@@ -1,4 +1,4 @@
-# MBS YC Benchmark Sample
+# MBS Benchmark Sample
 
 Deterministic local sample: 3 support-agent cases x 2 mock model adapters.
 It compares a verbose prompt against an MBS contract with validation and one targeted retry.
@@ -9,4 +9,4 @@ It compares a verbose prompt against an MBS contract with validation and one tar
 | verbose_prompt | 6 | 2 | 0.500 | 0.500 | 0.000 | 385.0 |
 
 Metrics: schema-valid means the output passed the schema validator; semantic-correct means required expected fields also matched the case label.
-This is not the broad GPU benchmark; it is the smallest reproducible sample for a YC reviewer.
+This is the smallest reproducible sample; broader model runs can use the same result schema.

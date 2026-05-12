@@ -25,6 +25,11 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
+[project.urls]
+Homepage = "https://github.com/aletheiaprotocol-ai/mbs"
+Repository = "https://github.com/aletheiaprotocol-ai/mbs"
+Issues = "https://github.com/aletheiaprotocol-ai/mbs/issues"
+
 [project.scripts]
 mbs = "mbs.cli:main"
 mbs-compile = "mbs_compiler:main"

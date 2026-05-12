@@ -5,7 +5,7 @@
     "precise_mock",
     "cheap_mock"
   ],
-  "note": "Deterministic local adapter sample for YC demo. Broad GPU results are tracked separately.",
+  "note": "Deterministic local adapter sample. Broader model results can use the same result schema.",
   "summary": {
     "by_strategy": [
       {
@@ -45,7 +45,7 @@
         "output": 41
       },
       "trace": {
-        "trace_id": "mbs_trace_9b8fc91e2bd8",
+        "trace_id": "mbs_trace_d11cdaa3dc60",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
         "input_hash": "sha256:65438a2a587297f7048b70c6e26b1cd312efc64a08cc69cfae46aac5394636e5",
@@ -53,7 +53,7 @@
         "model": "precise_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "PASS",
         "errors": [],
         "tokens": {
@@ -79,7 +79,7 @@
         "output": 41
       },
       "trace": {
-        "trace_id": "mbs_trace_e4e8c6a225e6",
+        "trace_id": "mbs_trace_3abd7036939d",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
         "input_hash": "sha256:65438a2a587297f7048b70c6e26b1cd312efc64a08cc69cfae46aac5394636e5",
@@ -87,7 +87,7 @@
         "model": "precise_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "PASS",
         "errors": [],
         "tokens": {
@@ -113,7 +113,7 @@
         "output": 43
       },
       "trace": {
-        "trace_id": "mbs_trace_d1aca7f32a11",
+        "trace_id": "mbs_trace_e3e256c91ef1",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
         "input_hash": "sha256:382bf94594648e4de1ecb75f4c66c54b6369552f133ec58d35aac5c299cb148a",
@@ -121,7 +121,7 @@
         "model": "precise_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "PASS",
         "errors": [],
         "tokens": {
@@ -147,7 +147,7 @@
         "output": 43
       },
       "trace": {
-        "trace_id": "mbs_trace_210f1adaef2d",
+        "trace_id": "mbs_trace_34575f65ab1b",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
         "input_hash": "sha256:382bf94594648e4de1ecb75f4c66c54b6369552f133ec58d35aac5c299cb148a",
@@ -155,7 +155,7 @@
         "model": "precise_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "PASS",
         "errors": [],
         "tokens": {
@@ -181,7 +181,7 @@
         "output": 42
       },
       "trace": {
-        "trace_id": "mbs_trace_2556ee0085f1",
+        "trace_id": "mbs_trace_351dd1324547",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
         "input_hash": "sha256:71963dcafa96cdab983aa7f7bc327d3ac85d2de31d8646b31bb948ff100c1052",
@@ -189,7 +189,7 @@
         "model": "precise_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "FAIL",
         "errors": [
           {
@@ -228,7 +228,7 @@
         "output": 42
       },
       "trace": {
-        "trace_id": "mbs_trace_4b7c0d6cd109",
+        "trace_id": "mbs_trace_e79488de29a1",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
         "input_hash": "sha256:71963dcafa96cdab983aa7f7bc327d3ac85d2de31d8646b31bb948ff100c1052",
@@ -236,7 +236,7 @@
         "model": "precise_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "PASS",
         "errors": [],
         "tokens": {
@@ -262,7 +262,7 @@
         "output": 47
       },
       "trace": {
-        "trace_id": "mbs_trace_1587310464fa",
+        "trace_id": "mbs_trace_010f619798d2",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
         "input_hash": "sha256:65438a2a587297f7048b70c6e26b1cd312efc64a08cc69cfae46aac5394636e5",
@@ -270,7 +270,7 @@
         "model": "cheap_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "FAIL",
         "errors": [
           {
@@ -322,7 +322,7 @@
         "output": 91
       },
       "trace": {
-        "trace_id": "mbs_trace_c63d36de060a",
+        "trace_id": "mbs_trace_a336ea3ffd3d",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
         "input_hash": "sha256:65438a2a587297f7048b70c6e26b1cd312efc64a08cc69cfae46aac5394636e5",
@@ -330,7 +330,7 @@
         "model": "cheap_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "PASS",
         "errors": [],
         "tokens": {
@@ -356,7 +356,7 @@
         "output": 34
       },
       "trace": {
-        "trace_id": "mbs_trace_c79a35184963",
+        "trace_id": "mbs_trace_8fecefe40298",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
         "input_hash": "sha256:382bf94594648e4de1ecb75f4c66c54b6369552f133ec58d35aac5c299cb148a",
@@ -364,7 +364,7 @@
         "model": "cheap_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "FAIL",
         "errors": [
           {
@@ -395,7 +395,7 @@
         "output": 80
       },
       "trace": {
-        "trace_id": "mbs_trace_a76ed5a1b437",
+        "trace_id": "mbs_trace_2367b668ca89",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
         "input_hash": "sha256:382bf94594648e4de1ecb75f4c66c54b6369552f133ec58d35aac5c299cb148a",
@@ -403,7 +403,7 @@
         "model": "cheap_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "PASS",
         "errors": [],
         "tokens": {
@@ -429,7 +429,7 @@
         "output": 42
       },
       "trace": {
-        "trace_id": "mbs_trace_ddfe69f4a4a9",
+        "trace_id": "mbs_trace_5cb803888c70",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:6f6572264f10046fd96747eca307efefef09b68bf4a57c18a1c26e9778c344d1",
         "input_hash": "sha256:71963dcafa96cdab983aa7f7bc327d3ac85d2de31d8646b31bb948ff100c1052",
@@ -437,7 +437,7 @@
         "model": "cheap_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "PASS",
         "errors": [],
         "tokens": {
@@ -463,7 +463,7 @@
         "output": 42
       },
       "trace": {
-        "trace_id": "mbs_trace_acae3475a39a",
+        "trace_id": "mbs_trace_baa91bbaf903",
         "schema_hash": "sha256:c1220bc85cb3358d7ebda840795fba6fc5c26e9f48e3b744ede9f25517b89f0b",
         "contract_hash": "sha256:3b39e52e0a9cc04529ee49862d4ca5ce695423572a2e995e7b60b41bdb550055",
         "input_hash": "sha256:71963dcafa96cdab983aa7f7bc327d3ac85d2de31d8646b31bb948ff100c1052",
@@ -471,7 +471,7 @@
         "model": "cheap_mock",
         "mbs_version": "0.1.0",
         "validator_version": "json_schema_v1",
-        "timestamp": "2026-05-04T09:22:07Z",
+        "timestamp": "2026-05-12T18:27:35Z",
         "status": "PASS",
         "errors": [],
         "tokens": {

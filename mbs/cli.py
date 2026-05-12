@@ -13,7 +13,7 @@ from .bench import mock_output, run_benchmark, run_benchmark_matrix
 from .compare import compare_results, format_compare, write_compare_json
 from .compiler import canonical_json, compile_schema, estimate_tokens, format_report, load_schema
 from .cost import report_cost
-from .demo import build_yc_demo, format_yc_demo, run_yc_benchmark, write_yc_artifacts
+from .demo import build_demo, format_demo, run_sample_benchmark, write_demo_artifacts
 from .lang import compile_language_contract
 from .models import load_model_registry, suite_models, suite_summary, validate_suite_coverage, write_model_ids
 from .report import aggregate_results, markdown_report, trace_errors
@@ -72,12 +72,12 @@ def main(argv: list[str] | None = None) -> int:
     p_bench.add_argument("--out")
     p_bench.add_argument("--json", action="store_true")
 
-    p_demo = sub.add_parser("demo", help="Run the 30-second YC-ready MBS prototype demo")
+    p_demo = sub.add_parser("demo", help="Run the 30-second MBS prototype demo")
     p_demo.add_argument("--json", action="store_true")
     p_demo.add_argument(
         "--write-artifacts",
         action="store_true",
-        help="Write the YC sample benchmark and one-page evidence brief",
+        help="Write the sample benchmark and one-page evidence brief",
     )
 
     p_test = sub.add_parser("test", help="Run structured-output regression tests")
@@ -282,14 +282,14 @@ def _cmd_bench(args: argparse.Namespace) -> int:
 
 
 def _cmd_demo(args: argparse.Namespace) -> int:
-    demo = build_yc_demo()
-    benchmark = run_yc_benchmark()
-    artifacts = write_yc_artifacts() if args.write_artifacts else {}
+    demo = build_demo()
+    benchmark = run_sample_benchmark()
+    artifacts = write_demo_artifacts() if args.write_artifacts else {}
     payload = {"demo": demo, "benchmark": benchmark, "artifacts": artifacts}
     if args.json:
         _print_json(payload)
     else:
-        print(format_yc_demo(demo))
+        print(format_demo(demo))
         print("")
         print("Sample benchmark:")
         for row in benchmark["summary"]["by_strategy"]:

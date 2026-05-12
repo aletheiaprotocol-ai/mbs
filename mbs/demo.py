@@ -1,4 +1,4 @@
-"""Small YC-ready MBS demo and benchmark sample."""
+"""Small MBS demo and benchmark sample."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from .trace import create_trace
 from .validate import validate_output
 
 
-YC_SCHEMA: dict[str, Any] = {
+DEMO_SCHEMA: dict[str, Any] = {
     "name": "support_agent_action",
     "description": "Choose the safest structured action for a customer-support agent.",
     "type": "object",
@@ -39,26 +39,26 @@ YC_SCHEMA: dict[str, Any] = {
     },
 }
 
-YC_PROMPT = "Customer says: I think my account was taken over and I cannot sign in."
+DEMO_PROMPT = "Customer says: I think my account was taken over and I cannot sign in."
 
-YC_BAD_OUTPUT: dict[str, Any] = {
+DEMO_BAD_OUTPUT: dict[str, Any] = {
     "action": "ANSWER|ESCALATE",
     "priority": "high",
     "category": "SECURITY",
     "reason": "Account takeover should be handled urgently.",
 }
 
-YC_REPAIRED_OUTPUT: dict[str, Any] = {
+DEMO_REPAIRED_OUTPUT: dict[str, Any] = {
     "action": "ESCALATE",
     "priority": "HIGH",
     "category": "SECURITY",
     "reason": "Possible account takeover requires urgent escalation.",
 }
 
-YC_CASES: list[dict[str, Any]] = [
+DEMO_CASES: list[dict[str, Any]] = [
     {
         "id": "account_takeover",
-        "input": YC_PROMPT,
+        "input": DEMO_PROMPT,
         "expected": {"action": "ESCALATE", "priority": "HIGH", "category": "SECURITY"},
     },
     {
@@ -118,7 +118,7 @@ _OUTPUTS: dict[str, dict[str, dict[str, dict[str, Any]]]] = {
     },
     "cheap_mock": {
         "verbose_prompt": {
-            "account_takeover": YC_BAD_OUTPUT,
+            "account_takeover": DEMO_BAD_OUTPUT,
             "double_charge": {
                 "action": "CREATE_TICKET",
                 "priority": "MEDIUM",
@@ -132,7 +132,7 @@ _OUTPUTS: dict[str, dict[str, dict[str, dict[str, Any]]]] = {
             },
         },
         "mbs_contract": {
-            "account_takeover": YC_BAD_OUTPUT,
+            "account_takeover": DEMO_BAD_OUTPUT,
             "double_charge": {
                 "action": "CREATE_TICKET",
                 "priority": "MEDIUM",
@@ -152,7 +152,7 @@ _REPAIRS: dict[tuple[str, str], dict[str, Any]] = {
     (
         "cheap_mock",
         "account_takeover",
-    ): YC_REPAIRED_OUTPUT,
+    ): DEMO_REPAIRED_OUTPUT,
     (
         "cheap_mock",
         "double_charge",
@@ -165,26 +165,26 @@ _REPAIRS: dict[tuple[str, str], dict[str, Any]] = {
 }
 
 
-def build_yc_demo() -> dict[str, Any]:
+def build_demo() -> dict[str, Any]:
     """Build the one-screen end-to-end demo payload."""
-    contract = compile_schema(YC_SCHEMA, format="natural", task_context=YC_PROMPT)
-    validation = validate_output(YC_SCHEMA, YC_BAD_OUTPUT)
+    contract = compile_schema(DEMO_SCHEMA, format="natural", task_context=DEMO_PROMPT)
+    validation = validate_output(DEMO_SCHEMA, DEMO_BAD_OUTPUT)
     trace = create_trace(
-        YC_SCHEMA,
+        DEMO_SCHEMA,
         contract,
         validation,
-        input_text=YC_PROMPT,
+        input_text=DEMO_PROMPT,
         model="cheap_mock",
-        output_tokens=estimate_tokens(canonical_json(YC_BAD_OUTPUT)),
+        output_tokens=estimate_tokens(canonical_json(DEMO_BAD_OUTPUT)),
     )
-    repaired_validation = validate_output(YC_SCHEMA, YC_REPAIRED_OUTPUT)
+    repaired_validation = validate_output(DEMO_SCHEMA, DEMO_REPAIRED_OUTPUT)
     repaired_trace = create_trace(
-        YC_SCHEMA,
+        DEMO_SCHEMA,
         contract,
         repaired_validation,
-        input_text=YC_PROMPT,
+        input_text=DEMO_PROMPT,
         model="cheap_mock+mbs_retry",
-        output_tokens=estimate_tokens(canonical_json(YC_REPAIRED_OUTPUT)),
+        output_tokens=estimate_tokens(canonical_json(DEMO_REPAIRED_OUTPUT)),
     )
     cost = report_cost(
         [
@@ -200,7 +200,7 @@ def build_yc_demo() -> dict[str, Any]:
         ]
     )
     return {
-        "input": {"schema": YC_SCHEMA, "prompt": YC_PROMPT},
+        "input": {"schema": DEMO_SCHEMA, "prompt": DEMO_PROMPT},
         "contract": {
             "text": contract["prompt"],
             "mbs_tokens": contract["token_estimate"],
@@ -209,7 +209,7 @@ def build_yc_demo() -> dict[str, Any]:
             "schema_hash": contract["schema_hash"],
             "contract_hash": contract["contract_hash"],
         },
-        "run": {"model": "cheap_mock", "output": YC_BAD_OUTPUT},
+        "run": {"model": "cheap_mock", "output": DEMO_BAD_OUTPUT},
         "check": {
             "status": validation["status"],
             "schema_valid": validation["schema_valid"],
@@ -218,7 +218,7 @@ def build_yc_demo() -> dict[str, Any]:
             "trace_id": trace["trace_id"],
         },
         "retry": {
-            "output": YC_REPAIRED_OUTPUT,
+            "output": DEMO_REPAIRED_OUTPUT,
             "status": repaired_validation["status"],
             "schema_valid": repaired_validation["schema_valid"],
             "trace_id": repaired_trace["trace_id"],
@@ -227,13 +227,13 @@ def build_yc_demo() -> dict[str, Any]:
     }
 
 
-def run_yc_benchmark() -> dict[str, Any]:
+def run_sample_benchmark() -> dict[str, Any]:
     """Run a deterministic 3-case x 2-model sample benchmark."""
-    mbs_contract = compile_schema(YC_SCHEMA, format="natural", task_context="Return one support action.")
-    verbose_contract = compile_schema(YC_SCHEMA, format="full", task_context="Return one support action.")
+    mbs_contract = compile_schema(DEMO_SCHEMA, format="natural", task_context="Return one support action.")
+    verbose_contract = compile_schema(DEMO_SCHEMA, format="full", task_context="Return one support action.")
     rows: list[dict[str, Any]] = []
     for model in ("precise_mock", "cheap_mock"):
-        for case in YC_CASES:
+        for case in DEMO_CASES:
             rows.append(
                 _benchmark_row(
                     model=model,
@@ -256,22 +256,22 @@ def run_yc_benchmark() -> dict[str, Any]:
                 )
             )
     return {
-        "schema": YC_SCHEMA["name"],
-        "cases": len(YC_CASES),
+        "schema": DEMO_SCHEMA["name"],
+        "cases": len(DEMO_CASES),
         "models": ["precise_mock", "cheap_mock"],
-        "note": "Deterministic local adapter sample for YC demo. Broad GPU results are tracked separately.",
+        "note": "Deterministic local adapter sample. Broader model results can use the same result schema.",
         "summary": _benchmark_summary(rows),
         "rows": rows,
     }
 
 
-def write_yc_artifacts(
-    result_json: str | Path = "benchmarks/results/yc_sample_benchmark.json",
-    result_md: str | Path = "benchmarks/results/yc_sample_benchmark.md",
-    brief_md: str | Path = "docs/mbs_yc_evidence_brief.md",
+def write_demo_artifacts(
+    result_json: str | Path = "benchmarks/results/sample_benchmark.json",
+    result_md: str | Path = "benchmarks/results/sample_benchmark.md",
+    brief_md: str | Path = "docs/mbs_evidence_brief.md",
 ) -> dict[str, str]:
-    benchmark = run_yc_benchmark()
-    demo = build_yc_demo()
+    benchmark = run_sample_benchmark()
+    demo = build_demo()
     result_json = Path(result_json)
     result_md = Path(result_md)
     brief_md = Path(brief_md)
@@ -279,16 +279,16 @@ def write_yc_artifacts(
     result_md.parent.mkdir(parents=True, exist_ok=True)
     brief_md.parent.mkdir(parents=True, exist_ok=True)
     result_json.write_text(json.dumps(benchmark, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    result_md.write_text(format_yc_benchmark_markdown(benchmark), encoding="utf-8")
-    brief_md.write_text(format_yc_evidence_brief(demo, benchmark), encoding="utf-8")
+    result_md.write_text(format_sample_benchmark_markdown(benchmark), encoding="utf-8")
+    brief_md.write_text(format_evidence_brief(demo, benchmark), encoding="utf-8")
     return {"json": str(result_json), "benchmark_markdown": str(result_md), "brief": str(brief_md)}
 
 
-def format_yc_demo(demo: dict[str, Any] | None = None) -> str:
-    demo = demo or build_yc_demo()
+def format_demo(demo: dict[str, Any] | None = None) -> str:
+    demo = demo or build_demo()
     first_error = demo["check"]["errors"][0] if demo["check"]["errors"] else {}
     lines = [
-        "MBS YC demo: structured agent output check",
+        "MBS Demo: structured agent output check",
         "",
         "Input prompt:",
         f"  {demo['input']['prompt']}",
@@ -326,10 +326,10 @@ def format_yc_demo(demo: dict[str, Any] | None = None) -> str:
     return "\n".join(lines)
 
 
-def format_yc_benchmark_markdown(benchmark: dict[str, Any] | None = None) -> str:
-    benchmark = benchmark or run_yc_benchmark()
+def format_sample_benchmark_markdown(benchmark: dict[str, Any] | None = None) -> str:
+    benchmark = benchmark or run_sample_benchmark()
     lines = [
-        "# MBS YC Benchmark Sample",
+        "# MBS Benchmark Sample",
         "",
         "Deterministic local sample: 3 support-agent cases x 2 mock model adapters.",
         "It compares a verbose prompt against an MBS contract with validation and one targeted retry.",
@@ -347,19 +347,19 @@ def format_yc_benchmark_markdown(benchmark: dict[str, Any] | None = None) -> str
         [
             "",
             "Metrics: schema-valid means the output passed the schema validator; semantic-correct means required expected fields also matched the case label.",
-            "This is not the broad GPU benchmark; it is the smallest reproducible sample for a YC reviewer.",
+            "This is the smallest reproducible sample; broader model runs can use the same result schema.",
         ]
     )
     return "\n".join(lines) + "\n"
 
 
-def format_yc_evidence_brief(demo: dict[str, Any] | None = None, benchmark: dict[str, Any] | None = None) -> str:
-    demo = demo or build_yc_demo()
-    benchmark = benchmark or run_yc_benchmark()
+def format_evidence_brief(demo: dict[str, Any] | None = None, benchmark: dict[str, Any] | None = None) -> str:
+    demo = demo or build_demo()
+    benchmark = benchmark or run_sample_benchmark()
     mbs = next(row for row in benchmark["summary"]["by_strategy"] if row["strategy"] == "mbs_contract+retry")
     verbose = next(row for row in benchmark["summary"]["by_strategy"] if row["strategy"] == "verbose_prompt")
     return (
-        "# MBS YC Evidence Brief\n\n"
+        "# MBS Evidence Brief\n\n"
         "## Problem\n\n"
         "Agents increasingly call tools, fill forms, and trigger workflows, but their structured outputs still fail in ordinary ways: invalid JSON, missing required fields, wrong enum values, and silent semantic drift. Teams usually discover these failures after the agent has already taken an action.\n\n"
         "## Wedge\n\n"
@@ -384,21 +384,21 @@ def _benchmark_row(
     contract: dict[str, Any],
     retry_output: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    validation = validate_output(YC_SCHEMA, output)
+    validation = validate_output(DEMO_SCHEMA, output)
     final_output = output
     retry_count = 0
     output_tokens = estimate_tokens(canonical_json(output))
     if strategy.startswith("mbs_contract") and retry_output is not None and not validation["schema_valid"]:
         retry_count = 1
         final_output = retry_output
-        validation = validate_output(YC_SCHEMA, retry_output)
+        validation = validate_output(DEMO_SCHEMA, retry_output)
         output_tokens += estimate_tokens(canonical_json(retry_output))
 
     semantic_correct = validation["schema_valid"] and _matches_expected(final_output, case["expected"])
     if validation["schema_valid"] and not semantic_correct:
         validation = {**validation, "status": "REVIEW", "errors": [{"field": "$", "type": "semantic_mismatch"}]}
     trace = create_trace(
-        YC_SCHEMA,
+        DEMO_SCHEMA,
         contract,
         validation,
         input_text=case["input"],

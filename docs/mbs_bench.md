@@ -85,41 +85,15 @@ mbs models \
   --min-models 30 \
   --min-families 10 \
   --min-size-bands 3 \
-  --out benchmarks/hpc_stage1_models.txt
+  --out benchmarks/stage1_models.txt
 ```
 
-The broad suite currently covers 37 models across 17 families. The large suite covers 14 larger/MoE models across 11 families.
+The broad suite currently covers 37 models across 17 families. The large suite
+covers 14 larger/MoE models across 11 families. Use the exported model list with
+your own model adapter or evaluation harness.
 
-For offline cluster runs, check the actual local model cache before submitting arrays:
-
-```bash
-python scripts/mbs_hf_cache_check.py \
-  --models benchmarks/leonardo_verified_cached_models.txt \
-  --cache-root /leonardo_work/AIFAC_F02_151/hf_cache
-```
-
-The Transformers runner uses tokenizer chat templates by default when available:
-
-```bash
-python scripts/mbs_transformers_bench.py ... --chat-template auto
-```
-
-Use `--chat-template never` only for legacy plain-completion comparisons.
-
-The same runner now supports MBS-Lang remote runs:
-
-```bash
-python scripts/mbs_transformers_bench.py ... \
-  --input-language ar \
-  --output-language ar \
-  --contract-language en
-```
-
-For retry/cost experiments, keep the no-retry baseline and submit a separate retry run:
-
-```bash
-python scripts/mbs_transformers_bench.py ... --retries 1
-```
+For retry/cost experiments, keep the no-retry baseline and compare it with a
+separate retry run using the same cases, schema, and model adapter.
 
 ## Failure Types
 
@@ -140,4 +114,5 @@ prompt_injection_followed
 
 ## Compute Gate
 
-Use local/dev runs for harness validation. Submit Leonardo/MN5 jobs only after configs, cases, semantic labels, and result schemas are stable.
+Use local/dev runs for harness validation. Scale model runs only after configs,
+cases, semantic labels, and result schemas are stable.

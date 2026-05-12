@@ -5,20 +5,13 @@ from mbs import check, report_cost, validate_output
 from mbs.bench import run_benchmark_matrix
 from mbs.cli import main
 from mbs.compare import compare_results, format_compare
-from mbs.demo import build_yc_demo, run_yc_benchmark
+from mbs.demo import build_demo, run_sample_benchmark
 from mbs.lang import compile_language_contract
 from mbs.models import load_model_registry, suite_models, suite_summary, validate_suite_coverage
 from mbs.report import aggregate_results, markdown_report
 from mbs.retry import build_retry_prompt, retry_guidance
 from mbs.retry_audit import audit_retry_attempts, format_retry_audit
 from mbs.triage import triage_results
-from scripts.mbs_transformers_bench import (
-    _extract_json_or_raw,
-    _extract_json_with_diagnostics,
-    _is_better_attempt,
-    _refresh_validation_status,
-    _should_stop_retry,
-)
 
 
 SCHEMA = {
@@ -157,73 +150,6 @@ def test_retry_guidance_handles_reasoning_prose():
     assert any("chain-of-thought" in line for line in guidance)
 
 
-def test_transformers_json_extraction_handles_wrapped_json():
-    fenced = '```json\n{"priority":"HIGH","reason":"security"}\n```'
-    prose = 'Here is the result:\n{"priority":"LOW","reason":"billing"}\nDone.'
-    multiple = 'First draft {"priority":"LOW"} final {"priority":"HIGH","reason":"security"}'
-
-    assert _extract_json_or_raw(fenced) == {"priority": "HIGH", "reason": "security"}
-    assert _extract_json_or_raw(prose) == {"priority": "LOW", "reason": "billing"}
-    assert _extract_json_or_raw(multiple) == {"priority": "HIGH", "reason": "security"}
-
-
-def test_transformers_json_extraction_reports_prose_diagnostics():
-    output, warnings, errors = _extract_json_with_diagnostics(
-        "Analysis: choose the safest enum.\n{\"priority\":\"LOW\",\"reason\":\"billing\"}"
-    )
-    assert output == {"priority": "LOW", "reason": "billing"}
-    assert warnings[0]["type"] == "prose_wrapped_json"
-    assert errors == []
-
-    output, warnings, errors = _extract_json_with_diagnostics("Let me reason step by step before answering.")
-    assert output == "Let me reason step by step before answering."
-    assert warnings == []
-    assert errors[0]["type"] == "reasoning_prose"
-
-
-def test_transformers_extraction_warnings_make_validation_review():
-    validation = {"status": "PASS", "errors": [], "warnings": [{"type": "prose_wrapped_json"}]}
-
-    _refresh_validation_status(validation)
-
-    assert validation["status"] == "REVIEW"
-
-
-def test_retry_policy_can_avoid_semantic_retry():
-    validation = {"schema_valid": True}
-    schema_args = type("Args", (), {"retry_policy": "schema"})()
-    semantic_args = type("Args", (), {"retry_policy": "semantic"})()
-
-    assert _should_stop_retry(validation, False, schema_args) is True
-    assert _should_stop_retry(validation, False, semantic_args) is False
-
-
-def test_retry_adoption_rejects_non_improving_semantic_regression():
-    first = {"status": "FAIL", "json_valid": True, "schema_valid": False, "errors": [{"type": "invalid_enum"}]}
-    repair = {"status": "FAIL", "json_valid": True, "schema_valid": False, "errors": [{"type": "invented_enum"}]}
-    fixed = {"status": "PASS", "json_valid": True, "schema_valid": True, "errors": []}
-
-    assert _is_better_attempt(repair, False, first, True) is False
-    assert _is_better_attempt(fixed, True, first, True) is True
-
-
-def test_retry_adoption_rejects_worse_failure_type_even_with_fewer_errors():
-    first = {
-        "status": "FAIL",
-        "json_valid": True,
-        "schema_valid": False,
-        "errors": [{"type": "missing_required_key"}, {"type": "missing_required_key"}],
-    }
-    repair = {
-        "status": "FAIL",
-        "json_valid": True,
-        "schema_valid": False,
-        "errors": [{"type": "invented_enum"}],
-    }
-
-    assert _is_better_attempt(repair, True, first, True) is False
-
-
 def test_benchmark_matrix_summarizes_models_styles_and_languages(tmp_path):
     schema_path, cases_path = _write_schema_and_cases(tmp_path)
 
@@ -268,8 +194,8 @@ def test_cli_bench_accepts_models_yaml(tmp_path, capsys):
     assert json.loads(out_path.read_text(encoding="utf-8"))["summary"]["matrix_runs"] == 1
 
 
-def test_yc_demo_is_small_and_traceable():
-    demo = build_yc_demo()
+def test_demo_is_small_and_traceable():
+    demo = build_demo()
 
     assert demo["check"]["status"] == "FAIL"
     assert demo["check"]["failure_type"] == "invalid_enum"
@@ -279,8 +205,8 @@ def test_yc_demo_is_small_and_traceable():
     assert demo["cost"]["cost_per_valid_output_tokens"] is not None
 
 
-def test_yc_benchmark_compares_two_models_and_three_cases():
-    benchmark = run_yc_benchmark()
+def test_demo_benchmark_compares_two_models_and_three_cases():
+    benchmark = run_sample_benchmark()
     rows = benchmark["summary"]["by_strategy"]
     by_strategy = {row["strategy"]: row for row in rows}
 
@@ -298,11 +224,11 @@ def test_cli_demo_prints_and_writes_artifacts(tmp_path, monkeypatch, capsys):
     assert main(["demo", "--write-artifacts"]) == 0
     output = capsys.readouterr().out
 
-    assert "MBS YC demo" in output
+    assert "MBS Demo" in output
     assert "Sample benchmark:" in output
-    assert (tmp_path / "benchmarks" / "results" / "yc_sample_benchmark.json").exists()
-    assert (tmp_path / "benchmarks" / "results" / "yc_sample_benchmark.md").exists()
-    assert (tmp_path / "docs" / "mbs_yc_evidence_brief.md").exists()
+    assert (tmp_path / "benchmarks" / "results" / "sample_benchmark.json").exists()
+    assert (tmp_path / "benchmarks" / "results" / "sample_benchmark.md").exists()
+    assert (tmp_path / "docs" / "mbs_evidence_brief.md").exists()
 
 
 def test_cli_test_uses_models_config(tmp_path, capsys):

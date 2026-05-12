@@ -12,7 +12,7 @@ explicitly measuring compact/cheap contracts.
 python -m pip install -e . --no-deps
 ```
 
-## Run The YC Demo
+## Run The Demo
 
 ```bash
 mbs demo
@@ -99,4 +99,5 @@ mbs compare \
   --current benchmarks/results/regression_enum_failure.json
 ```
 
-Current scope is local correctness and reproducibility. Real model adapters and Leonardo/MN5 jobs should start only after this harness is stable.
+Current scope is local correctness and reproducibility. Real model adapters
+should start only after this harness is stable.
