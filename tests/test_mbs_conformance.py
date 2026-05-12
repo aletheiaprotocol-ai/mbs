@@ -8,6 +8,7 @@ from mbs.bench import run_benchmark, run_benchmark_matrix, summarize
 from mbs.cli import main
 from mbs.compiler import compile_schema, load_schema, schema_hash
 from mbs.cost import report_cost
+from mbs.report import aggregate_results, expand_paths
 from mbs.trace import create_trace
 from mbs.validate import validate_output
 
@@ -169,6 +170,26 @@ def test_benchmark_summary_counts_clean_json_and_warnings():
     assert result["valid_json_rate"] == pytest.approx(2 / 3, rel=1e-3)
     assert result["clean_json_rate"] == pytest.approx(1 / 3, rel=1e-3)
     assert result["failure_types"] == {"invalid_json": 1}
+
+
+def test_report_expands_result_directory_to_json_files(tmp_path):
+    result_dir = tmp_path / "results"
+    result_dir.mkdir()
+    payload = {
+        "schema": "schema-a",
+        "model": "model-a",
+        "summary": {"runs": 1, "schema_valid_rate": 1.0, "semantic_correct_rate": 1.0, "clean_json_rate": 1.0},
+        "rows": [{"case_id": "ok", "status": "PASS", "schema_valid": True, "semantic_correct": True, "json_valid": True}],
+    }
+    (result_dir / "one.json").write_text(json.dumps(payload), encoding="utf-8")
+    (result_dir / "notes.txt").write_text("not a result", encoding="utf-8")
+
+    files = expand_paths([result_dir])
+    report = aggregate_results([result_dir])
+
+    assert files == [(result_dir / "one.json").resolve()]
+    assert report["summary"]["rows"] == 1
+    assert report["summary"]["infra_failed_rows"] == 0
 
 
 def test_run_benchmark_matrix_supports_multiple_schemas_and_language_dict(tmp_path):

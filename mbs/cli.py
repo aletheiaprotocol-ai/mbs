@@ -97,7 +97,7 @@ def main(argv: list[str] | None = None) -> int:
     p_lang.add_argument("--json", action="store_true")
 
     p_report = sub.add_parser("report", help="Aggregate MBS benchmark result files")
-    p_report.add_argument("--results", nargs="+", required=True, help="Result JSON files or glob patterns")
+    p_report.add_argument("--results", nargs="+", required=True, help="Result JSON files, directories, or glob patterns")
     p_report.add_argument("--out", help="Markdown report output path")
     p_report.add_argument("--exclude-infra", action="store_true", help="Exclude infrastructure-failed rows from the table")
     p_report.add_argument("--require-traces", action="store_true", help="Return nonzero if report rows lack trace evidence")

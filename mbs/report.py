@@ -91,11 +91,18 @@ def expand_paths(paths: list[str | Path]) -> list[Path]:
         value = str(raw)
         matches = [Path(p) for p in glob.glob(value)]
         if matches:
-            found.extend(matches)
+            for match in matches:
+                if match.is_dir():
+                    found.extend(match.glob("*.json"))
+                else:
+                    found.append(match)
         else:
             path = Path(value)
             if path.exists():
-                found.append(path)
+                if path.is_dir():
+                    found.extend(path.glob("*.json"))
+                else:
+                    found.append(path)
     return sorted({p.resolve() for p in found})
 
 
