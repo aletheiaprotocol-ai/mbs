@@ -59,6 +59,10 @@ mbs report --results "benchmarks/results/**/*.json" --exclude-infra --require-tr
 
 `--summary-only` emits the model PASS/REVIEW/FAIL scorecard and aggregate failure summary without the full row table. Use this for launch notes and daily compute reviews.
 
+For repository regression testing, use the copy/paste CI workflow in
+`.github/workflows/mbs-ci.yml` and the guide in
+`docs/mbs_ci_regression_gate.md`.
+
 Use `mbs triage --max-failure-examples N --out triage.json` to export concrete
 failed case ids, trace ids, failure types, and first validation details.
 

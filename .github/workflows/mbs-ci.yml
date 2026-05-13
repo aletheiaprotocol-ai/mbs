@@ -1,0 +1,48 @@
+name: MBS CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  structured-output-regression:
+    name: Structured-output regression gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install package
+        run: python -m pip install -e .
+
+      - name: Run unit and conformance tests
+        run: python -m pytest -q
+
+      - name: Run deterministic MBS demo artifacts
+        run: mbs demo --write-artifacts
+
+      - name: Run deterministic MBS benchmark
+        run: mbs bench --config benchmarks/models.yaml --out benchmarks/results/ci_bench.json
+
+      - name: Enforce traceable benchmark report
+        run: mbs report --results benchmarks/results/ci_bench.json --exclude-infra --require-traces --summary-only --out benchmarks/results/ci_report.md
+
+      - name: Upload MBS CI artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mbs-ci-artifacts
+          path: |
+            benchmarks/results/ci_bench.json
+            benchmarks/results/ci_report.md
+            benchmarks/results/sample_benchmark.json
+            benchmarks/results/sample_benchmark.md
+            docs/mbs_evidence_brief.md

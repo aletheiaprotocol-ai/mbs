@@ -110,6 +110,7 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 - `docs/mbs_lang.md`
 - `docs/mbs_model_behavior_guidance.md`
 - `docs/mbs_agent_tools.md`
+- `docs/mbs_ci_regression_gate.md`
 - `docs/mbs_azure_provider_benchmark_may2026.md`
 - `docs/mbs_failure_triage_examples.md`
 - `docs/mbs_json_mode_tool_calling_plan.md`
@@ -136,6 +137,10 @@ Run MBS before deploying an agent that calls tools or updates records:
 mbs bench --config benchmarks/models.yaml --out benchmarks/results/ci_bench.json
 mbs report --results benchmarks/results/ci_bench.json --exclude-infra --require-traces --summary-only
 ```
+
+The repository includes a ready-to-copy GitHub Actions workflow at
+`.github/workflows/mbs-ci.yml`. See `docs/mbs_ci_regression_gate.md` for the
+CI evidence boundary and provider-response extension path.
 
 Treat easy local mock runs as install/software checks. Treat real-model,
 multi-schema, multi-case runs as benchmark evidence only when result JSON files,
