@@ -1,4 +1,5 @@
 import json
+import importlib.util
 from pathlib import Path
 
 from mbs import call_agent_tool, check, handle_agent_tool_request, list_agent_tools, report_cost, validate_output
@@ -332,6 +333,31 @@ def test_public_adapter_fixture_supports_report_and_compare(tmp_path):
     assert report["rows"][0]["schema_valid_rate"] == 1.0
     assert comparison["status"] == "PASS"
     assert any(item["metric"] == "schema_valid_rate" and item["delta"] > 0 for item in comparison["comparisons"])
+
+
+def test_adapter_fixture_gate_script_writes_manifest(tmp_path, monkeypatch, capsys):
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "run_adapter_fixture_gate.py"
+    spec = importlib.util.spec_from_file_location("run_adapter_fixture_gate", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["run_adapter_fixture_gate.py", "--root", str(root), "--out-dir", str(tmp_path), "--json"],
+    )
+
+    assert module.main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    manifest = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
+
+    assert payload["status"] == "PASS"
+    assert manifest["classification"] == "adapter_fixture_smoke_not_provider_benchmark"
+    assert manifest["checks"]["compare_status"] == "PASS"
+    assert manifest["checks"]["triage_status"] == "FAIL"
+    assert manifest["checks"]["expected_fixture_failures_present"] is True
+    assert (tmp_path / "report_summary.md").exists()
 
 
 def test_make_response_template_cli_and_api(tmp_path, capsys):

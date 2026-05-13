@@ -128,6 +128,27 @@ mbs compare \
 This proves only that the adapter, report, and compare pipeline works on fixture
 data. It is a smoke test, not benchmark evidence for any provider or model.
 
+The same smoke gate can be run as one command:
+
+```bash
+python scripts/run_adapter_fixture_gate.py --out-dir results/adapter_fixture_gate
+```
+
+It writes:
+
+- `text_fixture.mbs.json`
+- `tool_call_fixture.mbs.json`
+- `report_summary.md`
+- `compare_text_vs_tool_call.json`
+- `triage.json`
+- `manifest.json`
+
+`manifest.json` deliberately classifies the run as
+`adapter_fixture_smoke_not_provider_benchmark`. The text fixture contains a bad
+response, so triage should find failures. That is expected and useful: the smoke
+gate proves the pipeline can surface failures before any real provider claim is
+made.
+
 For controlled mode ablations, compare on shared identity fields and keep the
 changed field explicit in the report:
 
