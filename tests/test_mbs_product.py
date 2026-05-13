@@ -885,6 +885,52 @@ def test_gate_fails_bad_metrics_and_missing_traces(tmp_path):
     assert "trace_coverage" in failed_metrics
 
 
+def test_gate_enforces_provider_coverage_thresholds(tmp_path):
+    result_path = tmp_path / "provider.json"
+    result_path.write_text(
+        json.dumps(
+            {
+                "runs": [
+                    {
+                        "schema": "schema-a.json",
+                        "model": "provider-model-a",
+                        "runs": 2,
+                        "schema_valid_rate": 1.0,
+                        "semantic_correct_rate": 1.0,
+                        "clean_json_rate": 1.0,
+                    }
+                ],
+                "rows": [
+                    {
+                        "schema": "schema-a.json",
+                        "model": "provider-model-a",
+                        "status": "PASS",
+                        "schema_valid": True,
+                        "semantic_correct": True,
+                        "trace": {"trace_id": "mbs_trace_1", "tokens": {"output": 3}},
+                    },
+                    {
+                        "schema": "schema-a.json",
+                        "model": "provider-model-a",
+                        "status": "PASS",
+                        "schema_valid": True,
+                        "semantic_correct": True,
+                        "trace": {"trace_id": "mbs_trace_2", "tokens": {"output": 3}},
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    config = {"thresholds": {"min_rows": 2, "min_total_runs": 4, "min_models": 2, "min_schemas": 2}}
+
+    result = evaluate_gate([result_path], config=config)
+    failed_metrics = {failure["metric"] for failure in result["failures"]}
+
+    assert result["status"] == "FAIL"
+    assert {"total_runs", "models", "schemas"} <= failed_metrics
+
+
 def test_cli_gate_uses_yaml_config_and_writes_json(tmp_path, capsys):
     result_path = tmp_path / "bench.json"
     config_path = tmp_path / "gate.yaml"

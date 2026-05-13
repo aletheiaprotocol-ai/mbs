@@ -143,7 +143,9 @@ mbs gate --results benchmarks/results/ci_bench.json --config benchmarks/ci_gate.
 
 The repository includes a ready-to-copy GitHub Actions workflow at
 `.github/workflows/mbs-ci.yml`. See `docs/mbs_ci_regression_gate.md` for the
-CI evidence boundary and provider-response extension path.
+CI evidence boundary and provider-response extension path. For real provider or
+OSS gates, start from `benchmarks/provider_gate.example.yaml` and tune thresholds
+explicitly for the application risk.
 
 Treat easy local mock runs as install/software checks. Treat real-model,
 multi-schema, multi-case runs as benchmark evidence only when result JSON files,

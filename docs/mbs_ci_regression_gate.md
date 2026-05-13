@@ -69,6 +69,17 @@ For real providers or open-source models, use a separate config that matches the
 risk of that application. Do not loosen thresholds silently; document why a lower
 threshold is acceptable and keep the raw result JSON.
 
+The repository includes `benchmarks/provider_gate.example.yaml` as a starting
+point for real provider or OSS model gates. It adds coverage checks so a tiny
+run cannot accidentally pass as credible evidence:
+
+- minimum report rows;
+- minimum case runs;
+- minimum model count;
+- minimum schema count;
+- trace coverage required;
+- zero hidden infra failures.
+
 ## Adding A Real Agent Gate
 
 For your own agent, replace `benchmarks/models.yaml` with a config that points to
@@ -89,8 +100,17 @@ mbs adapt-responses \
   --out benchmarks/results/provider_tool_call.mbs.json
 
 mbs report --results benchmarks/results/provider_tool_call.mbs.json --exclude-infra --require-traces
+mbs gate \
+  --results benchmarks/results/provider_tool_call.mbs.json \
+  --config benchmarks/provider_gate.example.yaml \
+  --out benchmarks/results/provider_gate.json
 mbs triage --results benchmarks/results/provider_tool_call.mbs.json --out benchmarks/results/provider_triage.json
 ```
+
+If this gate fails, inspect `provider_gate.json`, the Markdown report, and the
+triage file. A gate failure is useful evidence: it tells you whether the problem
+is schema validity, semantic correctness, clean JSON formatting, trace coverage,
+run coverage, or infrastructure.
 
 ## Evidence Boundary
 

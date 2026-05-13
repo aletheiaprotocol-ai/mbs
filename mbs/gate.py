@@ -10,6 +10,10 @@ from .report import aggregate_results, trace_errors
 
 
 DEFAULT_THRESHOLDS = {
+    "min_rows": 1,
+    "min_total_runs": 1,
+    "min_models": 1,
+    "min_schemas": 1,
     "min_schema_valid_rate": 0.95,
     "min_semantic_correct_rate": 0.90,
     "min_clean_json_rate": 0.90,
@@ -53,6 +57,10 @@ def evaluate_gate(
     _check_min(failures, summary, "mean_schema_valid_rate", thresholds.get("min_schema_valid_rate"))
     _check_min(failures, summary, "mean_semantic_correct_rate", thresholds.get("min_semantic_correct_rate"))
     _check_min(failures, summary, "mean_clean_json_rate", thresholds.get("min_clean_json_rate"))
+    _check_min(failures, summary, "rows", thresholds.get("min_rows"))
+    _check_min(failures, summary, "total_runs", thresholds.get("min_total_runs"))
+    _check_min_count(failures, summary, "models", thresholds.get("min_models"))
+    _check_min_count(failures, summary, "schemas", thresholds.get("min_schemas"))
     _check_max(failures, summary, "missing_trace_rows", thresholds.get("max_missing_trace_rows"))
     _check_max(failures, summary, "uncheckable_result_rows", thresholds.get("max_uncheckable_result_rows"))
     _check_max(failures, summary, "infra_failed_rows", thresholds.get("max_infra_failed_rows"))
@@ -123,6 +131,15 @@ def _check_max(failures: list[dict[str, Any]], summary: dict[str, Any], key: str
     actual = int(summary.get(key) or 0)
     if actual > int(required):
         failures.append({"metric": key, "actual": actual, "required": f"<= {required}"})
+
+
+def _check_min_count(failures: list[dict[str, Any]], summary: dict[str, Any], key: str, required: Any) -> None:
+    if required is None:
+        return
+    values = summary.get(key) or []
+    actual = len(values) if isinstance(values, list) else 0
+    if actual < int(required):
+        failures.append({"metric": key, "actual": actual, "required": f">= {required}"})
 
 
 def _load_yaml_text(text: str) -> dict[str, Any]:

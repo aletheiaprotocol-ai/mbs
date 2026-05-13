@@ -1,0 +1,28 @@
+# Example threshold gate for real provider or OSS model results.
+# Copy this file, tune it for your application risk, and commit the tuned version
+# next to the result-producing workflow. Do not silently lower thresholds without
+# documenting why the lower value is acceptable.
+thresholds:
+  require_rows: true
+  require_traces: true
+
+  # Coverage requirements: the gate should fail if the run is too small to trust.
+  min_rows: 4
+  min_total_runs: 8
+  min_models: 1
+  min_schemas: 1
+
+  # Real providers may not hit 1.0 on first pass. These values are examples, not
+  # product claims. Raise them for high-risk tools such as payments, healthcare,
+  # identity, compliance, and destructive operations.
+  min_schema_valid_rate: 0.90
+  min_semantic_correct_rate: 0.80
+  min_clean_json_rate: 0.90
+
+  # Do not allow hidden evidence gaps.
+  max_missing_trace_rows: 0
+  max_uncheckable_result_rows: 0
+
+  # Keep infra failures visible. If a provider outage is acceptable for your CI,
+  # run a separate infra-tolerant workflow and keep behavior evidence separate.
+  max_infra_failed_rows: 0
