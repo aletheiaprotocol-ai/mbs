@@ -95,9 +95,11 @@ mbs adapt-responses --schema examples/tool_argument_generation/schema.json --res
 - `docs/mbs_lang.md`
 - `docs/mbs_model_behavior_guidance.md`
 - `docs/mbs_agent_tools.md`
+- `docs/mbs_azure_provider_benchmark_may2026.md`
 - `docs/mbs_failure_triage_examples.md`
 - `docs/mbs_json_mode_tool_calling_plan.md`
 - `docs/mbs_open_source_model_testing.md`
+- `docs/mbs_training_and_finetuning_path.md`
 - `docs/release_notes_v0.1.1.md`
 
 ## Why Not Just Validate JSON?

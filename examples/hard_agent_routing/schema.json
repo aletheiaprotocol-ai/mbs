@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["SEARCH_ACCOUNT", "ESCALATE_SECURITY", "CREATE_TICKET", "REFUND_REQUEST", "NO_ACTION"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+    },
+    "requires_human": {"type": "boolean"},
+    "customer_visible": {"type": "boolean"},
+    "risk_tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["account_takeover", "billing", "refund", "privacy", "legal", "routine", "ambiguous"]
+      }
+    },
+    "rationale": {"type": "string"}
+  },
+  "required": ["action", "priority", "requires_human", "customer_visible", "risk_tags", "rationale"]
+}
