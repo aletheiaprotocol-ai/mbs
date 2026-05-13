@@ -1,10 +1,17 @@
 # MBS
 
-MBS makes structured agent behavior measurable.
+MBS is a validation compiler that turns LLM outputs into auditable contracts, so
+agents fail loudly instead of silently.
 
-It compiles schemas into behavioral contracts, validates structured outputs,
-creates portable traces, reports cost per valid output, and provides a starter
+MBS is structured-output validation infrastructure for production agents. It
+compiles schemas into behavioral contracts, validates structured outputs,
+creates portable traces, reports cost per valid output, and provides a
 benchmark/test surface for structured-output reliability.
+
+Why now: agent systems increasingly call tools, update records, and trigger
+workflows from structured LLM outputs. At scale, valid JSON is not enough; teams
+need traces, failure reasons, regression tests, and cost-per-valid-output
+evidence.
 
 ## Install
 
@@ -59,7 +66,8 @@ For each structured output, MBS provides:
 
 ## Benchmark Sample
 
-Deterministic local sample: 3 support-agent cases x 2 mock model adapters.
+Deterministic local sample: 3 support-agent cases x 2 mock model adapters. This
+is a software/demo check, not broad model benchmark evidence.
 
 | strategy | cases | models | schema-valid | semantic-correct | avg retries | cost / valid output |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -69,6 +77,11 @@ Deterministic local sample: 3 support-agent cases x 2 mock model adapters.
 The sample is deliberately small so a reviewer or evaluator can understand the
 behavior quickly. Broader model runs can use the same result schema and report
 commands.
+
+Methodology: the sample uses fixed local fixtures in `benchmarks/models.yaml` and
+`examples/support_ticket_triage/`. Real provider evidence is documented in
+`docs/mbs_azure_provider_benchmark_may2026.md` and should be interpreted only for
+the tested schema, cases, modes, deployments, and run settings.
 
 ## Core Commands
 
