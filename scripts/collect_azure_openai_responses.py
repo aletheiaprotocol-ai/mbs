@@ -1,6 +1,7 @@
-"""Collect Azure OpenAI provider responses as JSONL for MBS.
+"""Collect chat provider responses as JSONL for MBS.
 
-This script is intentionally outside the `mbs` package. It reads credentials from
+This script is intentionally outside the `mbs` package. It supports Azure
+OpenAI and OpenAI-compatible local/vLLM servers, reads credentials from
 environment variables, does not store secrets, and writes provider responses in
 the file format consumed by `mbs adapt-responses`.
 """
@@ -10,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -22,7 +24,8 @@ DEFAULT_API_VERSION = "2025-02-01-preview"
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Collect Azure OpenAI responses for MBS adapter benchmarks")
+    parser = argparse.ArgumentParser(description="Collect chat provider responses for MBS adapter benchmarks")
+    parser.add_argument("--provider", choices=["azure", "openai-compatible"], default="azure")
     parser.add_argument("--schema", required=True)
     parser.add_argument("--cases", required=True)
     parser.add_argument("--out", required=True)
@@ -44,7 +47,7 @@ def main() -> int:
         raise SystemExit("Azure OpenAI endpoint env var is not set")
     if not api_key:
         raise SystemExit(f"Azure OpenAI key env var is not set: {args.api_key_env}")
-    if not deployment:
+    if args.provider == "azure" and not deployment:
         raise SystemExit("Azure OpenAI deployment is not set")
 
     schema = json.loads(Path(args.schema).read_text(encoding="utf-8"))
@@ -54,7 +57,16 @@ def main() -> int:
         started = time.time()
         request_body = build_request(schema, case, args.mode, args.max_tokens, args.seed)
         try:
-            response = post_chat(endpoint, deployment, args.api_version, api_key, request_body, timeout=args.timeout)
+            response = post_chat(
+                args.provider,
+                endpoint,
+                deployment,
+                args.api_version,
+                api_key,
+                request_body,
+                timeout=args.timeout,
+                model=args.model,
+            )
             row = row_from_response(case, response, args.mode, args.model, round(time.time() - started, 4))
         except Exception as exc:  # keep infrastructure failures explicit in the JSONL
             row = {
@@ -63,7 +75,7 @@ def main() -> int:
                 "model": args.model,
                 "decoding_mode": args.mode,
                 "response": "",
-                "provider_error": type(exc).__name__,
+                "provider_error": provider_error_code(exc),
                 "provider_error_message": str(exc),
                 "latency_s": round(time.time() - started, 4),
             }
@@ -113,13 +125,29 @@ def build_request(schema: dict[str, Any], case: dict[str, Any], mode: str, max_t
     return body
 
 
-def post_chat(endpoint: str, deployment: str, api_version: str, api_key: str, body: dict[str, Any], *, timeout: int) -> dict[str, Any]:
-    url = f"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={api_version}"
+def post_chat(
+    provider: str,
+    endpoint: str,
+    deployment: str,
+    api_version: str,
+    api_key: str,
+    body: dict[str, Any],
+    *,
+    timeout: int,
+    model: str,
+) -> dict[str, Any]:
+    if provider == "azure":
+        url = f"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={api_version}"
+        headers = {"Content-Type": "application/json", "api-key": api_key}
+    else:
+        url = endpoint.rstrip("/") + "/v1/chat/completions"
+        body = {**body, "model": model}
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key or 'EMPTY'}"}
     data = json.dumps(body).encode("utf-8")
     request = urllib.request.Request(
         url,
         data=data,
-        headers={"Content-Type": "application/json", "api-key": api_key},
+        headers=headers,
         method="POST",
     )
     try:
@@ -128,6 +156,14 @@ def post_chat(endpoint: str, deployment: str, api_version: str, api_key: str, bo
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"HTTP {exc.code}: {detail[:500]}") from exc
+
+
+def provider_error_code(exc: Exception) -> str:
+    text = str(exc)
+    match = re.search(r'"code"\s*:\s*"([^"]+)"', text)
+    if match:
+        return match.group(1)
+    return type(exc).__name__
 
 
 def row_from_response(case: dict[str, Any], response: dict[str, Any], mode: str, model: str, latency_s: float) -> dict[str, Any]:

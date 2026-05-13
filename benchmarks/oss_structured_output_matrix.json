@@ -1,0 +1,39 @@
+{
+  "purpose": "MBS structured-output benchmark plan for open-source models across families and weights.",
+  "evidence_note": "This is a benchmark matrix/config, not benchmark evidence until response JSONL files and MBS reports are generated.",
+  "families": [
+    {
+      "family": "Qwen",
+      "models": [
+        {"id": "Qwen/Qwen2.5-3B-Instruct", "size_band": "3B", "runner": "vllm"},
+        {"id": "Qwen/Qwen2.5-14B-Instruct", "size_band": "14B", "runner": "vllm"},
+        {"id": "Qwen/Qwen2.5-72B-Instruct-AWQ", "size_band": "72B-AWQ", "runner": "vllm"}
+      ]
+    },
+    {
+      "family": "Llama",
+      "models": [
+        {"id": "meta-llama/Llama-3.1-8B-Instruct", "size_band": "8B", "runner": "vllm"},
+        {"id": "meta-llama/Llama-3.1-70B-Instruct-AWQ", "size_band": "70B-AWQ", "runner": "vllm"}
+      ]
+    },
+    {
+      "family": "Mixtral",
+      "models": [
+        {"id": "mistralai/Mixtral-8x7B-Instruct-v0.1", "size_band": "8x7B", "runner": "vllm"},
+        {"id": "mistralai/Mixtral-8x7B-Instruct-v0.1-AWQ", "size_band": "8x7B-AWQ", "runner": "vllm"}
+      ]
+    }
+  ],
+  "modes": ["text", "json_mode", "tool_call"],
+  "schemas": ["examples/tool_argument_generation/schema.json"],
+  "cases": ["examples/tool_argument_generation/cases.jsonl"],
+  "minimum_evidence_gate": {
+    "min_models": 6,
+    "min_families": 3,
+    "min_weight_bands": 3,
+    "require_traces": true,
+    "require_infra_failure_separation": true,
+    "claim_limit": "Do not claim model reliability from smoke fixtures or fewer than the minimum gates."
+  }
+}

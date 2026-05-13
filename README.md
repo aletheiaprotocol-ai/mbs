@@ -97,6 +97,7 @@ mbs adapt-responses --schema examples/tool_argument_generation/schema.json --res
 - `docs/mbs_agent_tools.md`
 - `docs/mbs_failure_triage_examples.md`
 - `docs/mbs_json_mode_tool_calling_plan.md`
+- `docs/mbs_open_source_model_testing.md`
 - `docs/release_notes_v0.1.1.md`
 
 ## Why Not Just Validate JSON?
