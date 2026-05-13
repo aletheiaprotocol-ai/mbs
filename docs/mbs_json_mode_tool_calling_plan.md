@@ -119,3 +119,33 @@ An adapter result is credible only when it includes:
 Add one local adapter that accepts a JSONL file of provider responses and emits
 MBS benchmark rows. This avoids committing to any provider SDK while proving the
 adapter contract and report format.
+
+Implemented command:
+
+```bash
+mbs adapt-responses \
+  --schema examples/tool_argument_generation/schema.json \
+  --cases examples/tool_argument_generation/cases.jsonl \
+  --responses results/provider_responses.jsonl \
+  --model provider-model-name \
+  --decoding-mode json_mode \
+  --out results/provider_responses.mbs.json
+```
+
+Accepted JSONL row shape:
+
+```json
+{"case_id":"case-1","input":"...","output":{"tool":"search_customer","arguments":{"customer_id":"123"}},"expected_valid_outputs":{"tool":"search_customer"},"tokens":{"output":42}}
+```
+
+The adapter also accepts provider-style output fields named `response`,
+`content`, `arguments`, `tool_arguments`, `tool_call.arguments`, or
+`tool_call.function.arguments`. If `--cases` is supplied, cases are merged by
+`case_id`/`id` and then row order so semantic expectations can live in the
+original benchmark file. It emits normal MBS result JSON, so the existing report,
+compare, retry-audit, and triage commands work unchanged:
+
+```bash
+mbs report --results results/provider_responses.mbs.json --require-traces --summary-only
+mbs compare --baseline results/text_mode.mbs.json --current results/provider_responses.mbs.json --match-on schema,model,language
+```

@@ -81,6 +81,7 @@ mbs check --schema examples/fintech_transaction_risk/schema.json --input "Custom
 mbs bench --config benchmarks/models.yaml
 mbs report --results benchmarks/results/*.json --exclude-infra --require-traces --summary-only
 mbs agent-tools --list
+mbs adapt-responses --schema examples/tool_argument_generation/schema.json --responses provider_responses.jsonl --out provider_responses.mbs.json
 ```
 
 ## Docs

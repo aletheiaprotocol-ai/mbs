@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .agent_tools import AgentToolError, call_agent_tool, handle_agent_tool_request, list_agent_tools
+from .adapter import adapt_response_jsonl
 from .bench import mock_output, run_benchmark, run_benchmark_matrix
 from .compare import compare_results, format_compare, write_compare_json
 from .compiler import canonical_json, compile_schema, estimate_tokens, format_report, load_schema
@@ -149,6 +150,19 @@ def main(argv: list[str] | None = None) -> int:
     p_agent_tools.add_argument("--request", help="JSON object or path with {tool/name, arguments}")
     p_agent_tools.add_argument("--json", action="store_true")
 
+    p_adapt = sub.add_parser("adapt-responses", help="Convert provider-response JSONL into MBS benchmark rows")
+    p_adapt.add_argument("--schema", required=True)
+    p_adapt.add_argument("--responses", required=True, help="JSONL file with provider outputs")
+    p_adapt.add_argument("--cases", help="Optional JSONL benchmark cases to merge by id or row order")
+    p_adapt.add_argument("--model", default="provider-response")
+    p_adapt.add_argument("--prompt-style", default="full")
+    p_adapt.add_argument("--decoding-mode", default="provider_response_file")
+    p_adapt.add_argument("--input-language")
+    p_adapt.add_argument("--output-language")
+    p_adapt.add_argument("--contract-language")
+    p_adapt.add_argument("--out", help="Write MBS result JSON")
+    p_adapt.add_argument("--json", action="store_true")
+
     args = parser.parse_args(argv)
     if not args.command:
         parser.print_help()
@@ -184,6 +198,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_triage(args)
     if args.command == "agent-tools":
         return _cmd_agent_tools(args)
+    if args.command == "adapt-responses":
+        return _cmd_adapt_responses(args)
     raise AssertionError(args.command)
 
 
@@ -473,6 +489,27 @@ def _cmd_agent_tools(args: argparse.Namespace) -> int:
         for tool in payload:
             print(f"{tool['name']}: {tool['description']}")
     return 0
+
+
+def _cmd_adapt_responses(args: argparse.Namespace) -> int:
+    payload = adapt_response_jsonl(
+        args.schema,
+        args.responses,
+        cases_path=args.cases,
+        model=args.model,
+        prompt_style=args.prompt_style,
+        decoding_mode=args.decoding_mode,
+        input_language=args.input_language,
+        output_language=args.output_language,
+        contract_language=args.contract_language,
+    )
+    if args.out:
+        _write_json(args.out, payload)
+    if args.json:
+        _print_json(payload)
+    else:
+        _print_json(payload["summary"])
+    return 0 if payload["rows"] else 2
 
 
 def _load_json_or_inline(value: str) -> Any:

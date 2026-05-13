@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from mbs import call_agent_tool, check, handle_agent_tool_request, list_agent_tools, report_cost, validate_output
+from mbs.adapter import adapt_response_jsonl
 from mbs.bench import run_benchmark_matrix
 from mbs.cli import main
 from mbs.compare import compare_results, format_compare
@@ -141,6 +142,107 @@ def test_agent_tool_request_supports_validate():
     assert response["tool"] == "mbs.validate"
     assert response["result"]["schema_valid"] is False
     assert response["result"]["errors"][0]["type"] == "invented_enum"
+
+
+def test_adapt_response_jsonl_creates_traceable_rows(tmp_path):
+    schema_path = tmp_path / "schema.json"
+    responses_path = tmp_path / "responses.jsonl"
+    schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")
+    responses_path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "case_id": "ok",
+                        "input": "high risk transfer",
+                        "output": {"decision": "REVIEW", "risk_level": "HIGH", "reason": "manual review"},
+                        "expected_valid_outputs": {"decision": "REVIEW"},
+                        "tokens": {"mbs_contract": 5, "output": 7},
+                    }
+                ),
+                json.dumps(
+                    {
+                        "case_id": "bad_enum",
+                        "response": {"decision": "ALLOW", "risk_level": "LOW", "reason": "bad enum"},
+                        "expected_valid_outputs": {"decision": "BLOCK"},
+                    }
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = adapt_response_jsonl(schema_path, responses_path, model="provider-x", decoding_mode="json_mode")
+
+    assert result["summary"]["runs"] == 2
+    assert result["summary"]["schema_valid_rate"] == 0.5
+    assert result["summary"]["semantic_correct_rate"] == 0.5
+    assert result["rows"][0]["trace"]["trace_id"].startswith("mbs_trace_")
+    assert result["rows"][0]["tokens"]["output"] == 7
+    assert result["rows"][1]["failure_type"] == "invented_enum"
+
+
+def test_cli_adapt_responses_writes_reportable_result(tmp_path, capsys):
+    schema_path = tmp_path / "schema.json"
+    cases_path = tmp_path / "cases.jsonl"
+    responses_path = tmp_path / "responses.jsonl"
+    out_path = tmp_path / "adapted.json"
+    schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")
+    cases_path.write_text(
+        json.dumps(
+            {
+                "id": "case-1",
+                "input": "high risk transfer",
+                "expected_valid_outputs": {"risk_level": "HIGH"},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    responses_path.write_text(
+        json.dumps(
+            {
+                "id": "case-1",
+                "tool_call": {
+                    "function": {
+                        "name": "risk_review",
+                        "arguments": {"decision": "REVIEW", "risk_level": "HIGH", "reason": "manual review"},
+                    }
+                },
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--responses",
+                str(responses_path),
+                "--cases",
+                str(cases_path),
+                "--model",
+                "provider-x",
+                "--decoding-mode",
+                "tool_call",
+                "--out",
+                str(out_path),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    written = json.loads(out_path.read_text(encoding="utf-8"))
+
+    assert payload["rows"][0]["decoding_mode"] == "tool_call"
+    assert payload["rows"][0]["semantic_correct"] is True
+    assert written["summary"]["schema_valid_rate"] == 1.0
+    assert written["rows"][0]["trace"]["model"] == "provider-x"
 
 
 def test_cli_agent_tools_lists_and_calls(tmp_path, capsys):
