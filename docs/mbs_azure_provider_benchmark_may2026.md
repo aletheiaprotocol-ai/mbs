@@ -25,7 +25,7 @@ Rows:
 - 36 total provider calls in the final larger-budget comparison
 - 0 infrastructure failures
 - 36 traceable rows
-- The fixture has since been expanded to 32 cases for the next evidence gate.
+- The fixture has since been expanded to 40 cases for the next evidence gate.
 
 ## Why This Is Hard Enough To Fail
 
@@ -143,5 +143,5 @@ The next gate is to run the same schema and cases against open-source model fami
 
 Then compare failures by family, size, and decoding mode.
 
-Before making headline claims, run OSS providers on the expanded 32-case fixture
+Before making headline claims, run OSS providers on the expanded 40-case fixture
 and compare per-case semantic mismatches by family, weight, and decoding mode.

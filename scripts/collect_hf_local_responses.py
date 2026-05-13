@@ -25,7 +25,11 @@ def main() -> int:
     parser.add_argument("--max-new-tokens", type=int, default=256)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--limit", type=int, default=0)
-    parser.add_argument("--device-map", default="auto")
+    parser.add_argument(
+        "--device-map",
+        default="single",
+        help="Use 'single' to load on one CUDA device without Accelerate auto memory balancing.",
+    )
     parser.add_argument("--dtype", default="auto")
     args = parser.parse_args()
 
@@ -39,13 +43,16 @@ def main() -> int:
         cases = cases[: args.limit]
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_path, local_files_only=True, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model_path,
-        local_files_only=True,
-        trust_remote_code=True,
-        torch_dtype=dtype_arg(args.dtype, torch),
-        device_map=args.device_map,
-    )
+    load_kwargs: dict[str, Any] = {
+        "local_files_only": True,
+        "trust_remote_code": True,
+        "torch_dtype": dtype_arg(args.dtype, torch),
+    }
+    if args.device_map != "single":
+        load_kwargs["device_map"] = args.device_map
+    model = AutoModelForCausalLM.from_pretrained(args.model_path, **load_kwargs)
+    if args.device_map == "single" and torch.cuda.is_available():
+        model = model.to("cuda")
     model.eval()
 
     rows: list[dict[str, Any]] = []

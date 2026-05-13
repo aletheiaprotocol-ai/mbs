@@ -93,3 +93,4 @@ mbs agent-tools --list
 - `docs/mbs_lang.md`
 - `docs/mbs_model_behavior_guidance.md`
 - `docs/mbs_agent_tools.md`
+- `docs/mbs_oss_mn5_benchmark_may2026.md`

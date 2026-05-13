@@ -38,7 +38,7 @@ python scripts/collect_hf_local_responses.py \
   --mode json_mode \
   --max-new-tokens 256 \
   --temperature 0 \
-  --limit 32 \
+  --limit 40 \
   --out "$OUT/${MBS_MODEL_KEY}_json_mode.responses.jsonl"
 
 python -m mbs.cli adapt-responses \

@@ -75,7 +75,7 @@ Observed:
 
 Next step before tuning:
 
-- rerun the expanded 32-case hard benchmark;
+- rerun the expanded 40-case hard benchmark;
 - run open-source families/weights;
 - identify repeated semantic mismatch clusters;
 - only then generate supervised fine-tuning data.

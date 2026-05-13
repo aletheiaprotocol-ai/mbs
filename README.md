@@ -113,6 +113,7 @@ python scripts/make_tuning_dataset.py --mbs-result results/hard_agent_routing/pr
 - `docs/mbs_failure_triage_examples.md`
 - `docs/mbs_json_mode_tool_calling_plan.md`
 - `docs/mbs_open_source_model_testing.md`
+- `docs/mbs_oss_mn5_benchmark_may2026.md`
 - `docs/mbs_training_and_finetuning_path.md`
 - `docs/release_notes_v0.1.1.md`
 
