@@ -4,6 +4,9 @@ MBS exposes a transport-neutral agent-tools layer for runtimes that need JSON-ca
 
 The layer is not tied to any server protocol. A wrapper can call it from an agent loop, workflow engine, or MCP-style server.
 
+For native provider JSON-mode and tool-calling evaluation, see
+`docs/mbs_json_mode_tool_calling_plan.md`.
+
 ## Available Tools
 
 ```bash

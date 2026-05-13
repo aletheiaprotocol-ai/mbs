@@ -92,6 +92,7 @@ mbs agent-tools --list
 - `docs/mbs_lang.md`
 - `docs/mbs_model_behavior_guidance.md`
 - `docs/mbs_agent_tools.md`
+- `docs/mbs_json_mode_tool_calling_plan.md`
 
 ## Why Not Just Validate JSON?
 

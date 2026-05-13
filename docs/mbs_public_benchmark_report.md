@@ -152,6 +152,49 @@ weakest schema compared with the natural baseline, but they did not eliminate
 semantic errors. For TinyLlama, strict prompting caused reasoning/prose failures;
 that is model behavior evidence, not a passing result.
 
+## Retry Ablation on Hard Tool-Argument Cases
+
+A retry ablation was then run on the same hard `tool_argument_generation` cases,
+same 5-model suite, same `full` and `strict` prompt styles, deterministic
+temperature `0.0`, and seed `333`.
+
+### Run metadata
+
+- retry policy: one semantic MBS retry
+- retry adoption: best valid/semantic attempt
+- result files: 10
+- case rows: 20
+- infrastructure-failed rows: 0
+- traceable case rows: 20
+- missing trace rows: 0
+
+### Aggregate result with retry
+
+| metric | value |
+| --- | ---: |
+| schema-valid rate | 0.900 |
+| semantic-correct rate | 0.850 |
+| clean JSON rate | 0.800 |
+
+Retry audit:
+
+| audit field | value |
+| --- | ---: |
+| audited rows | 9 |
+| retried rows | 9 |
+| improved rows | 7 |
+| unchanged rows | 2 |
+| selected-attempt regressions | 0 |
+
+Default regression comparison against the no-retry baseline passed for the
+strict schema/semantic identity fields. A separate cost/format comparison failed
+because `TinyLlama/TinyLlama-1.1B-Chat-v1.0` with the `full` prompt dropped clean
+JSON rate from `1.0` to `0.0` after retry.
+
+Interpretation: retry improved schema and semantic correctness for most rows,
+but it was not universally safe. MBS exposed the tradeoff: a repair loop can make
+the selected answer more correct while making a weak model less JSON-clean.
+
 ## Representative Failure Examples
 
 MBS distinguishes failures that a simple JSON validator would blur together:
@@ -195,15 +238,15 @@ model families and weights.
 
 This does not prove universal reliability, hosted service readiness, native API
 JSON-mode parity, tool-calling parity across providers, or broad statistical
-claims. Those require larger model suites, sampled decoding, retry/no-retry
-ablation, JSON-mode/tool-calling adapters, and repeated seeds.
+claims. Those require larger model suites, sampled decoding, JSON-mode/tool-calling
+adapters, and repeated seeds.
 
 ## Next Benchmark Gate
 
-The next credibility gate is a retry ablation on the same hard cases:
+The next credibility gate is native structured-output adapter evaluation:
 
+- text mode vs JSON mode vs tool calling;
 - no retry vs MBS retry;
-- deterministic and sampled decoding;
 - same model/schema/case IDs;
-- report retry improvements and retry regressions;
-- keep cost per valid output visible.
+- repeated seeds and sampled decoding;
+- report retry improvements, retry regressions, and cost per valid output.
