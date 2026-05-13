@@ -65,10 +65,15 @@ def adapt_response_jsonl(
             merged.get("language")
             or language_label(input_language=input_language, output_language=output_language, contract_language=contract_language)
         )
+        provider_error = _provider_error(merged)
         raw_output = _extract_output(merged)
         validation = validate_output(schema, raw_output)
+        if provider_error:
+            validation["status"] = "INFRA_FAIL"
+            validation["errors"] = [{"field": "$", "type": provider_error, "message": _provider_error_message(merged)}]
+            validation["warnings"] = []
         semantic_ok = _semantic_result(validation.get("output"), merged.get("expected_valid_outputs"))
-        if semantic_ok is False and validation["schema_valid"]:
+        if not provider_error and semantic_ok is False and validation["schema_valid"]:
             validation["status"] = "REVIEW"
             validation["errors"].append(
                 {"field": "$", "type": "semantic_mismatch", "expected": merged.get("expected_valid_outputs")}
@@ -95,7 +100,8 @@ def adapt_response_jsonl(
                 "json_valid": validation["json_valid"],
                 "schema_valid": validation["schema_valid"],
                 "semantic_correct": semantic_ok,
-                "failure_type": first_failure_type(validation),
+                "failure_type": provider_error or first_failure_type(validation),
+                "infra_failure": provider_error,
                 "latency_s": round(float(merged.get("latency_s", time.time() - started)), 4),
                 "errors": validation["errors"],
                 "warnings": validation["warnings"],
@@ -116,6 +122,55 @@ def adapt_response_jsonl(
     }
 
 
+def make_response_template(
+    cases_path: str | Path,
+    *,
+    output_field: str = "output",
+    model: str | None = None,
+    decoding_mode: str | None = None,
+) -> list[dict[str, Any]]:
+    """Create provider-response JSONL template rows from benchmark cases.
+
+    The template keeps case identity and input text but leaves the provider output
+    empty. Users can fill `output`, `response`, `arguments`, `tool_arguments`, or
+    nested `tool_call` fields after calling their own provider SDK.
+    """
+    if output_field not in {"output", "response", "arguments", "tool_arguments", "tool_call"}:
+        raise ValueError("output_field must be output, response, arguments, tool_arguments, or tool_call")
+    rows: list[dict[str, Any]] = []
+    for idx, case in enumerate(load_jsonl(cases_path)):
+        row: dict[str, Any] = {
+            "case_id": case.get("case_id", case.get("id", idx)),
+            "input": case.get("input", ""),
+        }
+        if model:
+            row["model"] = model
+        if decoding_mode:
+            row["decoding_mode"] = decoding_mode
+        if output_field == "tool_call":
+            row["tool_call"] = {"function": {"name": "fill_provider_tool_name", "arguments": {}}}
+        else:
+            row[output_field] = {}
+        rows.append(row)
+    return rows
+
+
+def write_response_template(
+    cases_path: str | Path,
+    out_path: str | Path,
+    *,
+    output_field: str = "output",
+    model: str | None = None,
+    decoding_mode: str | None = None,
+) -> list[dict[str, Any]]:
+    """Write a provider-response JSONL template and return generated rows."""
+    rows = make_response_template(cases_path, output_field=output_field, model=model, decoding_mode=decoding_mode)
+    p = Path(out_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + ("\n" if rows else ""), encoding="utf-8")
+    return rows
+
+
 def _extract_output(row: dict[str, Any]) -> Any:
     for key in OUTPUT_KEYS:
         if key in row:
@@ -133,6 +188,15 @@ def _extract_output(row: dict[str, Any]) -> Any:
         if isinstance(first, dict):
             return _extract_output({"tool_call": first})
     return ""
+
+
+def _provider_error(row: dict[str, Any]) -> str | None:
+    error = row.get("provider_error") or row.get("api_error") or row.get("infra_failure")
+    return str(error) if error else None
+
+
+def _provider_error_message(row: dict[str, Any]) -> str:
+    return str(row.get("provider_error_message") or row.get("api_error_message") or row.get("error") or "provider error")
 
 
 def _index_cases(cases: list[dict[str, Any]]) -> dict[Any, dict[str, Any]]:

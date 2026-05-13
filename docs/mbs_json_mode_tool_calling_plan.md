@@ -161,6 +161,11 @@ adapter contract and report format.
 Implemented command:
 
 ```bash
+mbs make-response-template \
+  --cases examples/tool_argument_generation/cases.jsonl \
+  --out results/provider_responses.template.jsonl \
+  --output-field tool_call
+
 mbs adapt-responses \
   --schema examples/tool_argument_generation/schema.json \
   --cases examples/tool_argument_generation/cases.jsonl \
@@ -175,6 +180,9 @@ Accepted JSONL row shape:
 ```json
 {"case_id":"case-1","input":"...","output":{"tool":"search_customer","arguments":{"customer_id":"123"}},"expected_valid_outputs":{"tool":"search_customer"},"tokens":{"output":42}}
 ```
+
+`make-response-template` emits empty rows with `case_id` and `input` so teams can
+fill the provider response fields after running their own SDK or gateway.
 
 The adapter also accepts provider-style output fields named `response`,
 `content`, `arguments`, `tool_arguments`, `tool_call.arguments`, or

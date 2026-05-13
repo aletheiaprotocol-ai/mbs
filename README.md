@@ -81,6 +81,7 @@ mbs check --schema examples/fintech_transaction_risk/schema.json --input "Custom
 mbs bench --config benchmarks/models.yaml
 mbs report --results benchmarks/results/*.json --exclude-infra --require-traces --summary-only
 mbs agent-tools --list
+mbs make-response-template --cases examples/tool_argument_generation/cases.jsonl --out provider_responses.template.jsonl --output-field tool_call
 mbs adapt-responses --schema examples/tool_argument_generation/schema.json --responses provider_responses.jsonl --out provider_responses.mbs.json
 ```
 - Adapter smoke fixtures: `examples/tool_argument_generation/provider_*_responses.jsonl`
@@ -94,7 +95,9 @@ mbs adapt-responses --schema examples/tool_argument_generation/schema.json --res
 - `docs/mbs_lang.md`
 - `docs/mbs_model_behavior_guidance.md`
 - `docs/mbs_agent_tools.md`
+- `docs/mbs_failure_triage_examples.md`
 - `docs/mbs_json_mode_tool_calling_plan.md`
+- `docs/release_notes_v0.1.1.md`
 
 ## Why Not Just Validate JSON?
 

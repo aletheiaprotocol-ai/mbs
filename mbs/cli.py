@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from .agent_tools import AgentToolError, call_agent_tool, handle_agent_tool_request, list_agent_tools
-from .adapter import adapt_response_jsonl
+from .adapter import adapt_response_jsonl, write_response_template
 from .bench import mock_output, run_benchmark, run_benchmark_matrix
 from .compare import compare_results, format_compare, write_compare_json
 from .compiler import canonical_json, compile_schema, estimate_tokens, format_report, load_schema
@@ -163,6 +163,18 @@ def main(argv: list[str] | None = None) -> int:
     p_adapt.add_argument("--out", help="Write MBS result JSON")
     p_adapt.add_argument("--json", action="store_true")
 
+    p_template = sub.add_parser("make-response-template", help="Create provider-response JSONL template rows from cases")
+    p_template.add_argument("--cases", required=True)
+    p_template.add_argument("--out", required=True)
+    p_template.add_argument(
+        "--output-field",
+        choices=["output", "response", "arguments", "tool_arguments", "tool_call"],
+        default="output",
+    )
+    p_template.add_argument("--model")
+    p_template.add_argument("--decoding-mode")
+    p_template.add_argument("--json", action="store_true")
+
     args = parser.parse_args(argv)
     if not args.command:
         parser.print_help()
@@ -200,6 +212,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_agent_tools(args)
     if args.command == "adapt-responses":
         return _cmd_adapt_responses(args)
+    if args.command == "make-response-template":
+        return _cmd_make_response_template(args)
     raise AssertionError(args.command)
 
 
@@ -510,6 +524,22 @@ def _cmd_adapt_responses(args: argparse.Namespace) -> int:
     else:
         _print_json(payload["summary"])
     return 0 if payload["rows"] else 2
+
+
+def _cmd_make_response_template(args: argparse.Namespace) -> int:
+    rows = write_response_template(
+        args.cases,
+        args.out,
+        output_field=args.output_field,
+        model=args.model,
+        decoding_mode=args.decoding_mode,
+    )
+    payload = {"cases": args.cases, "out": args.out, "rows": len(rows), "template_rows": rows}
+    if args.json:
+        _print_json(payload)
+    else:
+        print(f"Wrote {len(rows)} template rows to {args.out}")
+    return 0 if rows else 2
 
 
 def _load_json_or_inline(value: str) -> Any:

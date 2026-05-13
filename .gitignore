@@ -10,3 +10,4 @@ benchmarks/results/clean_install_*.json
 benchmarks/results/clean_install_*.md
 benchmarks/results/ci_*.json
 benchmarks/results/ci_*.md
+results/

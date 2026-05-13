@@ -1,7 +1,7 @@
 """MBS: Minimal Behavioral Specification for structured agent outputs."""
 
 from .agent_tools import call_agent_tool, handle_agent_tool_request, list_agent_tools, mock_agent_output
-from .adapter import adapt_response_jsonl
+from .adapter import adapt_response_jsonl, make_response_template, write_response_template
 from .compiler import (
     classify_enum,
     compile_schema,
@@ -42,6 +42,7 @@ __all__ = [
     "load_model_registry",
     "load_schema",
     "markdown_report",
+    "make_response_template",
     "mock_agent_output",
     "model_scorecards",
     "report_cost",
@@ -52,4 +53,5 @@ __all__ = [
     "trace_errors",
     "validate_suite_coverage",
     "validate_output",
+    "write_response_template",
 ]

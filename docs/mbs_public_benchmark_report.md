@@ -250,3 +250,8 @@ The next credibility gate is native structured-output adapter evaluation:
 - same model/schema/case IDs;
 - repeated seeds and sampled decoding;
 - report retry improvements, retry regressions, and cost per valid output.
+
+Adapter plumbing now exists through `mbs adapt-responses` and
+`mbs make-response-template`. The included provider-response fixtures are smoke
+tests only; the next benchmark gate still requires real provider/model outputs
+on hard cases before making any provider reliability claim.

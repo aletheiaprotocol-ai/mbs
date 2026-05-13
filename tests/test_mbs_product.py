@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from mbs import call_agent_tool, check, handle_agent_tool_request, list_agent_tools, report_cost, validate_output
-from mbs.adapter import adapt_response_jsonl
+from mbs.adapter import adapt_response_jsonl, make_response_template
 from mbs.bench import run_benchmark_matrix
 from mbs.cli import main
 from mbs.compare import compare_results, format_compare
@@ -182,6 +182,33 @@ def test_adapt_response_jsonl_creates_traceable_rows(tmp_path):
     assert result["rows"][1]["failure_type"] == "invented_enum"
 
 
+def test_adapt_response_jsonl_marks_provider_errors_as_infra_failures(tmp_path):
+    schema_path = tmp_path / "schema.json"
+    responses_path = tmp_path / "responses.jsonl"
+    schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")
+    responses_path.write_text(
+        json.dumps(
+            {
+                "case_id": "infra",
+                "input": "high risk transfer",
+                "response": "",
+                "provider_error": "DeploymentNotFound",
+                "provider_error_message": "deployment missing",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = adapt_response_jsonl(schema_path, responses_path, model="provider-x", decoding_mode="tool_call")
+    row = result["rows"][0]
+
+    assert row["status"] == "INFRA_FAIL"
+    assert row["infra_failure"] == "DeploymentNotFound"
+    assert row["failure_type"] == "DeploymentNotFound"
+    assert row["errors"][0]["message"] == "deployment missing"
+
+
 def test_cli_adapt_responses_writes_reportable_result(tmp_path, capsys):
     schema_path = tmp_path / "schema.json"
     cases_path = tmp_path / "cases.jsonl"
@@ -305,6 +332,46 @@ def test_public_adapter_fixture_supports_report_and_compare(tmp_path):
     assert report["rows"][0]["schema_valid_rate"] == 1.0
     assert comparison["status"] == "PASS"
     assert any(item["metric"] == "schema_valid_rate" and item["delta"] > 0 for item in comparison["comparisons"])
+
+
+def test_make_response_template_cli_and_api(tmp_path, capsys):
+    cases_path = tmp_path / "cases.jsonl"
+    out_path = tmp_path / "template.jsonl"
+    cases_path.write_text(
+        json.dumps({"id": "a", "input": "case a", "expected_valid_outputs": {"decision": "REVIEW"}}) + "\n",
+        encoding="utf-8",
+    )
+
+    rows = make_response_template(cases_path, output_field="tool_call", model="provider-x", decoding_mode="tool_call")
+    assert rows == [
+        {
+            "case_id": "a",
+            "input": "case a",
+            "model": "provider-x",
+            "decoding_mode": "tool_call",
+            "tool_call": {"function": {"name": "fill_provider_tool_name", "arguments": {}}},
+        }
+    ]
+
+    assert (
+        main(
+            [
+                "make-response-template",
+                "--cases",
+                str(cases_path),
+                "--out",
+                str(out_path),
+                "--output-field",
+                "arguments",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(capsys.readouterr().out)
+    written = [json.loads(line) for line in out_path.read_text(encoding="utf-8").splitlines()]
+    assert payload["rows"] == 1
+    assert written == [{"case_id": "a", "input": "case a", "arguments": {}}]
 
 
 def test_cli_agent_tools_lists_and_calls(tmp_path, capsys):
