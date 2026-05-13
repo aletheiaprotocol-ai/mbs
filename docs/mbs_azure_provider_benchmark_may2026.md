@@ -25,6 +25,7 @@ Rows:
 - 36 total provider calls in the final larger-budget comparison
 - 0 infrastructure failures
 - 36 traceable rows
+- The fixture has since been expanded to 32 cases for the next evidence gate.
 
 ## Why This Is Hard Enough To Fail
 
@@ -54,13 +55,34 @@ Overall:
 - mean semantic-correct rate: 0.2778
 - mean clean-JSON rate: 0.5555
 
+## Expanded Tool-Call Gate
+
+After the first report, the hard fixture was expanded to 32 cases and rerun in
+tool-call mode.
+
+| model | cases | infra failures | schema valid | semantic correct | clean JSON | top failures |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `gpt-5.5` | 32 | 0 | 1.0000 | 0.2500 | 1.0000 | `semantic_mismatch:24` |
+| `gpt-5-nano` | 32 | 0 | 0.0625 | 0.0000 | 0.0625 | `invalid_json:30`, `semantic_mismatch:2` |
+
+An initial expanded `gpt-5.5` run against the wrong Azure endpoint produced
+`DeploymentNotFound` for all 32 rows. MBS correctly classified those rows as
+infrastructure failures and they were excluded from model-behavior evidence.
+The rerun used the correct Sweden endpoint/key environment for `gpt-5.5`.
+
+The expanded gate is stronger evidence than the six-case bridge run because it
+shows repeated semantic mismatches across a larger reviewed case set while
+keeping infrastructure failures separate.
+
 ## Interpretation
 
 `gpt-5.5` mostly produced valid structured JSON but still failed on semantic routing decisions. This is exactly the kind of failure MBS is designed to expose beyond JSON validation.
 
 `gpt-5-nano` failed mostly at the format level. Increasing max completion tokens from 256 to 768 improved it from 0 schema-valid rows to a small number of valid rows, but did not make it reliable on this hard routing task.
 
-Tool calling improved schema validity for `gpt-5.5` versus text mode but regressed semantic correctness on this small hard set. This is a warning against assuming tool calling always improves real task correctness.
+Tool calling improved schema validity for `gpt-5.5` versus text mode but did not
+solve semantic correctness. This is a warning against assuming tool calling
+alone improves real task correctness.
 
 ## What This Proves
 
@@ -85,3 +107,6 @@ The next gate is to run the same schema and cases against open-source model fami
 - Mixtral 8x7B / AWQ
 
 Then compare failures by family, size, and decoding mode.
+
+Before making headline claims, run OSS providers on the expanded 32-case fixture
+and compare per-case semantic mismatches by family, weight, and decoding mode.

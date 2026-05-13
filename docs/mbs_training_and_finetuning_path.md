@@ -42,6 +42,20 @@ Each training row should keep the MBS case identity and expected structured outp
 
 ## Evaluation Gate After Tuning
 
+Create reviewable candidate rows from MBS failures with:
+
+```powershell
+python scripts\make_tuning_dataset.py `
+  --mbs-result results\hard_agent_routing\provider.mbs.json `
+  --cases examples\hard_agent_routing\cases.jsonl `
+  --schema examples\hard_agent_routing\schema.json `
+  --out results\training\hard_agent_routing_candidates.jsonl
+```
+
+The generator excludes infrastructure failures and emits only cases with stable
+`expected_valid_outputs`. Generated rows are not final training data until a
+human reviewer marks them approved.
+
 A tuned model must beat the untuned baseline on:
 
 - schema-valid rate;
@@ -61,7 +75,7 @@ Observed:
 
 Next step before tuning:
 
-- expand hard cases;
+- rerun the expanded 32-case hard benchmark;
 - run open-source families/weights;
 - identify repeated semantic mismatch clusters;
 - only then generate supervised fine-tuning data.
