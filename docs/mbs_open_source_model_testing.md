@@ -46,6 +46,35 @@ mbs report --results results/oss/*.mbs.json --require-traces --summary-only
 mbs triage --results results/oss/*.mbs.json --max-failure-examples 40
 ```
 
+## Run Without vLLM
+
+If vLLM or an OpenAI-compatible server is not available on the target HPC
+environment, use the local Hugging Face fallback collector:
+
+```bash
+python scripts/collect_hf_local_responses.py \
+  --model-path /path/to/Qwen2.5-3B-Instruct \
+  --model-id Qwen2.5-3B-Instruct \
+  --schema examples/hard_agent_routing/schema.json \
+  --cases examples/hard_agent_routing/cases.jsonl \
+  --mode json_mode \
+  --out results/oss/qwen25_3b_json_mode.responses.jsonl
+```
+
+Then adapt and report with the same MBS commands:
+
+```bash
+mbs adapt-responses \
+  --schema examples/hard_agent_routing/schema.json \
+  --cases examples/hard_agent_routing/cases.jsonl \
+  --responses results/oss/qwen25_3b_json_mode.responses.jsonl \
+  --model Qwen2.5-3B-Instruct \
+  --decoding-mode hf_local_json_mode \
+  --out results/oss/qwen25_3b_json_mode.mbs.json
+
+mbs report --results results/oss/qwen25_3b_json_mode.mbs.json --require-traces --summary-only
+```
+
 ## When Fine-Tuning Is Justified
 
 Fine-tuning is not the first response to failure. First classify failures:

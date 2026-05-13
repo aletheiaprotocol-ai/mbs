@@ -74,15 +74,50 @@ The expanded gate is stronger evidence than the six-case bridge run because it
 shows repeated semantic mismatches across a larger reviewed case set while
 keeping infrastructure failures separate.
 
+## Expanded Full Mode Matrix
+
+The expanded fixture was then run across text, JSON mode, and tool calling for
+both deployments: 32 cases x 2 models x 3 modes = 192 provider calls.
+
+Overall MBS report:
+
+- files: 6
+- total runs: 192
+- traceable case rows: 192
+- infrastructure failures: 0
+- missing trace rows: 0
+- mean schema-valid rate: 0.5156
+- mean semantic-correct rate: 0.1875
+- mean clean-JSON rate: 0.5156
+
+| model | modes | runs | schema valid | semantic correct | clean JSON | top failures |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `gpt-5.5` | 3 | 96 | 1.0000 | 0.3750 | 1.0000 | `semantic_mismatch:60` |
+| `gpt-5-nano` | 3 | 96 | 0.0312 | 0.0000 | 0.0312 | `invalid_json:93`, `semantic_mismatch:3` |
+
+Mode-level observations:
+
+- `gpt-5.5` text and JSON mode both reached 1.0000 schema validity and 0.4375
+	semantic correctness.
+- `gpt-5.5` tool calling reached 1.0000 schema validity but only 0.2500
+	semantic correctness.
+- `gpt-5-nano` remained format-limited across all three modes under this schema
+	and 768-token output budget.
+
+This is still not a universal leaderboard. It is credible evidence for this
+hard structured-routing fixture, these deployments, these modes, and this run
+configuration.
+
 ## Interpretation
 
 `gpt-5.5` mostly produced valid structured JSON but still failed on semantic routing decisions. This is exactly the kind of failure MBS is designed to expose beyond JSON validation.
 
 `gpt-5-nano` failed mostly at the format level. Increasing max completion tokens from 256 to 768 improved it from 0 schema-valid rows to a small number of valid rows, but did not make it reliable on this hard routing task.
 
-Tool calling improved schema validity for `gpt-5.5` versus text mode but did not
-solve semantic correctness. This is a warning against assuming tool calling
-alone improves real task correctness.
+Tool calling improved or preserved schema validity for `gpt-5.5` but did not
+solve semantic correctness. On the expanded gate, text and JSON mode beat tool
+calling on semantic correctness for this fixture. This is a warning against
+assuming tool calling alone improves real task correctness.
 
 ## What This Proves
 
