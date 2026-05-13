@@ -138,6 +138,7 @@ python -m pip install -e ".[test]"
 python -m pytest -q
 mbs bench --config benchmarks/models.yaml --out benchmarks/results/ci_bench.json
 mbs report --results benchmarks/results/ci_bench.json --exclude-infra --require-traces --summary-only
+mbs gate --results benchmarks/results/ci_bench.json --config benchmarks/ci_gate.yaml
 ```
 
 The repository includes a ready-to-copy GitHub Actions workflow at

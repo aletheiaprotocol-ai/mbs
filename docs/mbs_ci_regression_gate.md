@@ -32,6 +32,7 @@ python -m pytest -q
 mbs demo --write-artifacts
 mbs bench --config benchmarks/models.yaml --out benchmarks/results/ci_bench.json
 mbs report --results benchmarks/results/ci_bench.json --exclude-infra --require-traces --summary-only --out benchmarks/results/ci_report.md
+mbs gate --results benchmarks/results/ci_bench.json --config benchmarks/ci_gate.yaml --out benchmarks/results/ci_gate.json
 ```
 
 The `.[test]` extra installs the test runner used by CI. A clean GitHub runner
@@ -44,7 +45,29 @@ Block merge if any of these fail:
 1. Python tests fail.
 2. `mbs bench` does not produce result JSON.
 3. `mbs report --require-traces` exits nonzero.
-4. CI artifacts are missing.
+4. `mbs gate` misses configured thresholds.
+5. CI artifacts are missing.
+
+## Threshold Config
+
+The included `benchmarks/ci_gate.yaml` is intentionally strict because the
+default CI run is deterministic local mock data:
+
+```yaml
+thresholds:
+  require_rows: true
+  require_traces: true
+  min_schema_valid_rate: 1.0
+  min_semantic_correct_rate: 1.0
+  min_clean_json_rate: 1.0
+  max_missing_trace_rows: 0
+  max_uncheckable_result_rows: 0
+  max_infra_failed_rows: 0
+```
+
+For real providers or open-source models, use a separate config that matches the
+risk of that application. Do not loosen thresholds silently; document why a lower
+threshold is acceptable and keep the raw result JSON.
 
 ## Adding A Real Agent Gate
 

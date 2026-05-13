@@ -35,6 +35,9 @@ jobs:
       - name: Enforce traceable benchmark report
         run: mbs report --results benchmarks/results/ci_bench.json --exclude-infra --require-traces --summary-only --out benchmarks/results/ci_report.md
 
+      - name: Enforce MBS threshold gate
+        run: mbs gate --results benchmarks/results/ci_bench.json --config benchmarks/ci_gate.yaml --out benchmarks/results/ci_gate.json
+
       - name: Upload MBS CI artifacts
         uses: actions/upload-artifact@v4
         if: always()
@@ -43,6 +46,7 @@ jobs:
           path: |
             benchmarks/results/ci_bench.json
             benchmarks/results/ci_report.md
+            benchmarks/results/ci_gate.json
             benchmarks/results/sample_benchmark.json
             benchmarks/results/sample_benchmark.md
             docs/mbs_evidence_brief.md

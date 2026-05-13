@@ -16,6 +16,7 @@ from .compare import compare_results, format_compare, write_compare_json
 from .compiler import canonical_json, compile_schema, estimate_tokens, format_report, load_schema
 from .cost import report_cost
 from .demo import build_demo, format_demo, run_sample_benchmark, write_demo_artifacts
+from .gate import evaluate_gate, format_gate, load_gate_config, write_gate_json
 from .lang import compile_language_contract
 from .models import load_model_registry, suite_models, suite_summary, validate_suite_coverage, write_model_ids
 from .report import aggregate_results, markdown_report, trace_errors
@@ -104,6 +105,13 @@ def main(argv: list[str] | None = None) -> int:
     p_report.add_argument("--require-traces", action="store_true", help="Return nonzero if report rows lack trace evidence")
     p_report.add_argument("--summary-only", action="store_true", help="Print scorecards and failure summary without row table")
     p_report.add_argument("--json", action="store_true")
+
+    p_gate = sub.add_parser("gate", help="Fail CI if MBS benchmark results miss configured thresholds")
+    p_gate.add_argument("--results", nargs="+", required=True, help="Result JSON files, directories, or glob patterns")
+    p_gate.add_argument("--config", help="JSON/YAML threshold config")
+    p_gate.add_argument("--out", help="Write gate result JSON")
+    p_gate.add_argument("--exclude-infra", action="store_true", help="Exclude infrastructure-failed rows before threshold checks")
+    p_gate.add_argument("--json", action="store_true")
 
     p_compare = sub.add_parser("compare", help="Compare current MBS results against a baseline")
     p_compare.add_argument("--baseline", nargs="+", required=True, help="Baseline result JSON files or globs")
@@ -200,6 +208,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_lang(args)
     if args.command == "report":
         return _cmd_report(args)
+    if args.command == "gate":
+        return _cmd_gate(args)
     if args.command == "compare":
         return _cmd_compare(args)
     if args.command == "retry-audit":
@@ -408,6 +418,18 @@ def _cmd_report(args: argparse.Namespace) -> int:
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(markdown, encoding="utf-8")
     return 0 if report["rows"] and not errors else 2
+
+
+def _cmd_gate(args: argparse.Namespace) -> int:
+    config = load_gate_config(args.config)
+    result = evaluate_gate(args.results, config=config, exclude_infra=args.exclude_infra)
+    if args.json:
+        _print_json(result)
+    else:
+        print(format_gate(result))
+    if args.out:
+        write_gate_json(args.out, result)
+    return 0 if result["status"] == "PASS" else 2
 
 
 def _cmd_compare(args: argparse.Namespace) -> int:

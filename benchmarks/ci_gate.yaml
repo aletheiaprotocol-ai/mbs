@@ -1,0 +1,11 @@
+# Default local CI gate for deterministic MBS regression checks.
+# Use stricter or looser values for real provider/model gates depending on your risk tolerance.
+thresholds:
+  require_rows: true
+  require_traces: true
+  min_schema_valid_rate: 1.0
+  min_semantic_correct_rate: 1.0
+  min_clean_json_rate: 1.0
+  max_missing_trace_rows: 0
+  max_uncheckable_result_rows: 0
+  max_infra_failed_rows: 0

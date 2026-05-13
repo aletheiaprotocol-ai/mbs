@@ -8,6 +8,7 @@ from mbs.bench import run_benchmark_matrix
 from mbs.cli import main
 from mbs.compare import compare_results, format_compare
 from mbs.demo import build_demo, run_sample_benchmark
+from mbs.gate import evaluate_gate, format_gate, load_gate_config
 from mbs.lang import compile_language_contract
 from mbs.models import load_model_registry, suite_models, suite_summary, validate_suite_coverage
 from mbs.report import aggregate_results, markdown_report
@@ -834,6 +835,79 @@ def test_cli_report_require_traces_blocks_untraceable_rows(tmp_path, capsys):
     assert "Traceable case rows: 1" in output
     assert "Missing trace rows: 1" in output
     assert "Trace check failed" in output
+
+
+def test_gate_passes_clean_traceable_results(tmp_path):
+    result_path = tmp_path / "bench.json"
+    result_path.write_text(
+        json.dumps(
+            {
+                "schema": "schema.json",
+                "model": "mock",
+                "summary": {"runs": 1, "schema_valid_rate": 1.0, "semantic_correct_rate": 1.0, "clean_json_rate": 1.0},
+                "rows": [{"status": "PASS", "trace": {"trace_id": "mbs_trace_ok", "tokens": {"output": 3}}}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    config = {"thresholds": {"min_schema_valid_rate": 1.0, "min_semantic_correct_rate": 1.0, "min_clean_json_rate": 1.0}}
+
+    result = evaluate_gate([result_path], config=config)
+
+    assert result["status"] == "PASS"
+    assert not result["failures"]
+    assert "All configured thresholds passed" in format_gate(result)
+
+
+def test_gate_fails_bad_metrics_and_missing_traces(tmp_path):
+    result_path = tmp_path / "bench.json"
+    result_path.write_text(
+        json.dumps(
+            {
+                "schema": "schema.json",
+                "model": "mock",
+                "summary": {"runs": 2, "schema_valid_rate": 0.5, "semantic_correct_rate": 0.5, "clean_json_rate": 0.5},
+                "rows": [
+                    {"status": "PASS", "trace": {"trace_id": "mbs_trace_ok", "tokens": {"output": 3}}},
+                    {"status": "FAIL", "trace": {}},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = evaluate_gate([result_path], config={"thresholds": {"min_schema_valid_rate": 0.9}})
+    failed_metrics = {failure["metric"] for failure in result["failures"]}
+
+    assert result["status"] == "FAIL"
+    assert "mean_schema_valid_rate" in failed_metrics
+    assert "missing_trace_rows" in failed_metrics
+    assert "trace_coverage" in failed_metrics
+
+
+def test_cli_gate_uses_yaml_config_and_writes_json(tmp_path, capsys):
+    result_path = tmp_path / "bench.json"
+    config_path = tmp_path / "gate.yaml"
+    out_path = tmp_path / "gate.json"
+    result_path.write_text(
+        json.dumps(
+            {
+                "schema": "schema.json",
+                "model": "mock",
+                "summary": {"runs": 1, "schema_valid_rate": 1.0, "semantic_correct_rate": 1.0, "clean_json_rate": 1.0},
+                "rows": [{"status": "PASS", "trace": {"trace_id": "mbs_trace_ok", "tokens": {"output": 3}}}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    config_path.write_text("thresholds:\n  min_schema_valid_rate: 1.0\n  min_semantic_correct_rate: 1.0\n", encoding="utf-8")
+
+    assert main(["gate", "--results", str(result_path), "--config", str(config_path), "--out", str(out_path)]) == 0
+    written = json.loads(out_path.read_text(encoding="utf-8"))
+
+    assert "Status: PASS" in capsys.readouterr().out
+    assert load_gate_config(config_path)["thresholds"]["min_schema_valid_rate"] == 1.0
+    assert written["status"] == "PASS"
 
 
 def test_cli_validate_bad_inline_json_reports_invalid_json(tmp_path, capsys):
