@@ -134,6 +134,8 @@ difference between syntax checking and structured-agent-output testing.
 Run MBS before deploying an agent that calls tools or updates records:
 
 ```bash
+python -m pip install -e ".[test]"
+python -m pytest -q
 mbs bench --config benchmarks/models.yaml --out benchmarks/results/ci_bench.json
 mbs report --results benchmarks/results/ci_bench.json --exclude-infra --require-traces --summary-only
 ```

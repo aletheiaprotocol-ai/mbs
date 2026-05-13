@@ -27,12 +27,15 @@ The repository includes `.github/workflows/mbs-ci.yml`.
 Core commands:
 
 ```bash
-python -m pip install -e .
+python -m pip install -e ".[test]"
 python -m pytest -q
 mbs demo --write-artifacts
 mbs bench --config benchmarks/models.yaml --out benchmarks/results/ci_bench.json
 mbs report --results benchmarks/results/ci_bench.json --exclude-infra --require-traces --summary-only --out benchmarks/results/ci_report.md
 ```
+
+The `.[test]` extra installs the test runner used by CI. A clean GitHub runner
+does not inherit local development packages.
 
 ## Recommended Pull Request Rule
 
