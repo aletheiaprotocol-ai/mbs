@@ -108,6 +108,41 @@ This is still not a universal leaderboard. It is credible evidence for this
 hard structured-routing fixture, these deployments, these modes, and this run
 configuration.
 
+## 40-Case Refresh
+
+After adding eight more adversarial/routing-conflict cases, the fixture was run
+again across text, JSON mode, and tool calling for both deployments: 40 cases x
+2 models x 3 modes = 240 provider calls.
+
+Overall MBS report:
+
+- files: 6
+- total runs: 240
+- traceable case rows: 240
+- infrastructure failures: 0
+- missing trace rows: 0
+- mean schema-valid rate: 0.5167
+- mean semantic-correct rate: 0.1708
+- mean clean-JSON rate: 0.5167
+
+| model | modes | runs | schema valid | semantic correct | clean JSON | top failures |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `gpt-5.5` | 3 | 120 | 1.0000 | 0.3250 | 1.0000 | `semantic_mismatch:81` |
+| `gpt-5-nano` | 3 | 120 | 0.0333 | 0.0167 | 0.0333 | `invalid_json:116`, `semantic_mismatch:2` |
+
+Mode-level observations:
+
+- `gpt-5.5` JSON mode reached 1.0000 schema validity and 0.4000 semantic
+	correctness.
+- `gpt-5.5` text reached 1.0000 schema validity and 0.3500 semantic correctness.
+- `gpt-5.5` tool calling reached 1.0000 schema validity but only 0.2250 semantic
+	correctness.
+- `gpt-5-nano` remained format-limited: 0.0750 schema validity in JSON mode,
+	0.0250 in text mode, and 0.0000 in tool-call mode.
+
+This refresh confirms the earlier conclusion: valid JSON/schema compliance and
+tool calling do not establish semantic routing correctness on this fixture.
+
 ## Interpretation
 
 `gpt-5.5` mostly produced valid structured JSON but still failed on semantic routing decisions. This is exactly the kind of failure MBS is designed to expose beyond JSON validation.
@@ -143,5 +178,6 @@ The next gate is to run the same schema and cases against open-source model fami
 
 Then compare failures by family, size, and decoding mode.
 
-Before making headline claims, run OSS providers on the expanded 40-case fixture
-and compare per-case semantic mismatches by family, weight, and decoding mode.
+Before making headline claims, compare the expanded 40-case fixture across more
+OSS families, weights, and decoding modes, then inspect per-case semantic
+mismatch clusters.

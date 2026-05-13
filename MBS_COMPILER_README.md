@@ -83,6 +83,7 @@ mbs check --schema examples/fintech_transaction_risk/schema.json --input "Custom
 mbs bench --config benchmarks/models.yaml
 mbs report --results benchmarks/results/*.json --exclude-infra --require-traces --summary-only
 mbs agent-tools --list
+python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/*.mbs.json" --cases examples/hard_agent_routing/cases.jsonl --out-md results/hard_agent_routing/failure_analysis.md
 ```
 
 ## Docs
