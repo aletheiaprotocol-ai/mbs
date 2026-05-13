@@ -22,6 +22,12 @@ def main() -> int:
     parser.add_argument("--cases", required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--mode", choices=["text", "json_mode"], default="text")
+    parser.add_argument(
+        "--prompt-style",
+        choices=["default", "compact", "explicit_keys"],
+        default="default",
+        help="Prompt template variant for debugging format sensitivity.",
+    )
     parser.add_argument("--max-new-tokens", type=int, default=256)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--limit", type=int, default=0)
@@ -59,7 +65,7 @@ def main() -> int:
     for idx, case in enumerate(cases):
         started = time.time()
         try:
-            prompt = build_prompt(schema, case, args.mode)
+            prompt = build_prompt(schema, case, args.mode, args.prompt_style)
             messages = [
                 {"role": "system", "content": "Return only valid JSON matching the requested schema."},
                 {"role": "user", "content": prompt},
@@ -84,6 +90,7 @@ def main() -> int:
                 "input": case.get("input", ""),
                 "model": model_id,
                 "decoding_mode": f"hf_local_{args.mode}",
+                "prompt_style": args.prompt_style,
                 "response": response,
                 "latency_s": round(time.time() - started, 4),
                 "tokens": {"output": int(generated.numel())},
@@ -94,6 +101,7 @@ def main() -> int:
                 "input": case.get("input", ""),
                 "model": model_id,
                 "decoding_mode": f"hf_local_{args.mode}",
+                "prompt_style": args.prompt_style,
                 "response": "",
                 "provider_error": type(exc).__name__,
                 "provider_error_message": str(exc),
@@ -104,14 +112,37 @@ def main() -> int:
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n", encoding="utf-8")
-    print(json.dumps({"out": str(out), "rows": len(rows), "model": model_id, "mode": args.mode}, indent=2))
+    print(
+        json.dumps(
+            {"out": str(out), "rows": len(rows), "model": model_id, "mode": args.mode, "prompt_style": args.prompt_style},
+            indent=2,
+        )
+    )
     return 0
 
 
-def build_prompt(schema: dict[str, Any], case: dict[str, Any], mode: str) -> str:
+def build_prompt(schema: dict[str, Any], case: dict[str, Any], mode: str, prompt_style: str = "default") -> str:
     extra = ""
     if mode == "json_mode":
         extra = "\nYou must output one JSON object and no prose."
+    if prompt_style == "compact":
+        properties = schema.get("properties", {})
+        action_values = properties.get("action", {}).get("enum", [])
+        priority_values = properties.get("priority", {}).get("enum", [])
+        return (
+            "Return exactly one JSON object. No markdown. No explanation.\n"
+            "Required keys: action, priority, requires_human, customer_visible, risk_tags, rationale.\n"
+            f"Allowed action values: {action_values}.\n"
+            f"Allowed priority values: {priority_values}.\n"
+            f"Case: {case.get('input', '')}"
+        )
+    if prompt_style == "explicit_keys":
+        return (
+            "You are a support-routing classifier. Fill this JSON object only:\n"
+            '{"action":"","priority":"","requires_human":false,"customer_visible":true,"risk_tags":[],"rationale":""}\n'
+            f"Valid schema: {json.dumps(schema, ensure_ascii=False)}\n"
+            f"Customer message: {case.get('input', '')}{extra}"
+        )
     return (
         "Choose the correct structured tool-routing output for this case.\n"
         f"Schema: {json.dumps(schema, ensure_ascii=False)}\n"

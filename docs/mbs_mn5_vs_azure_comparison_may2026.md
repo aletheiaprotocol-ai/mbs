@@ -78,4 +78,5 @@ MN5 local Hugging Face jobs were run in `hf_local_json_mode` on cached models:
   from model capability.
 - Review controversial expected labels and document policy precedence.
 - Use `scripts/analyze_mbs_failures.py` after each run to compare recurring
-  case-level failure clusters.
+  case-level failure clusters. The analyzer can emit Markdown, JSON, and CSV;
+  Markdown now includes aggregate per-field semantic mismatch counts.

@@ -9,6 +9,7 @@ responses are available next to the MBS result files.
 from __future__ import annotations
 
 import argparse
+import csv
 import glob
 import json
 from collections import Counter, defaultdict
@@ -22,6 +23,7 @@ def main() -> int:
     parser.add_argument("--cases", default=None, help="Optional cases JSONL for case text/expected outputs")
     parser.add_argument("--out-md", default=None)
     parser.add_argument("--out-json", default=None)
+    parser.add_argument("--out-csv", default=None, help="Optional CSV summary of case-level failures")
     parser.add_argument("--exclude-infra", action="store_true", default=True)
     args = parser.parse_args()
 
@@ -33,6 +35,8 @@ def main() -> int:
         out_json = Path(args.out_json)
         out_json.parent.mkdir(parents=True, exist_ok=True)
         out_json.write_text(json.dumps(analysis, indent=2, ensure_ascii=False), encoding="utf-8")
+    if args.out_csv:
+        write_cases_csv(analysis, Path(args.out_csv))
     md = markdown_report(analysis)
     if args.out_md:
         out_md = Path(args.out_md)
@@ -87,6 +91,7 @@ def analyze(files: list[Path], *, cases: dict[str, dict[str, Any]], exclude_infr
     behavior_rows = [row for row in all_rows if not row.get("infra_failure")] if exclude_infra else all_rows
     models = summarize_models(behavior_rows)
     cases_summary = summarize_cases(behavior_rows, cases, response_index)
+    field_mismatches = summarize_field_mismatches(cases_summary)
     failure_types = Counter(str(row.get("failure_type") or "PASS") for row in behavior_rows)
     return {
         "files": [str(path) for path in files],
@@ -95,6 +100,7 @@ def analyze(files: list[Path], *, cases: dict[str, dict[str, Any]], exclude_infr
         "infra_failed_rows": len([row for row in all_rows if row.get("infra_failure")]),
         "models": models,
         "failure_types": dict(sorted(failure_types.items(), key=lambda item: (-item[1], item[0]))),
+        "field_mismatches": field_mismatches,
         "cases": cases_summary,
     }
 
@@ -156,6 +162,7 @@ def summarize_cases(
         expected = case.get("expected_valid_outputs") or expected_from_errors(items)
         observed_actions = Counter()
         observed_priorities = Counter()
+        field_mismatches = Counter()
         for row in items:
             key = (str(row.get("model") or "unknown"), str(row.get("decoding_mode") or "default"), case_id)
             output = extract_structured_output(response_index.get(key, {}))
@@ -164,6 +171,10 @@ def summarize_cases(
                     observed_actions[str(output.get("action"))] += 1
                 if output.get("priority") is not None:
                     observed_priorities[str(output.get("priority"))] += 1
+                if isinstance(expected, dict):
+                    for field, expected_value in expected.items():
+                        if not semantically_equal(output.get(field), expected_value):
+                            field_mismatches[field] += 1
         summaries.append(
             {
                 "case_id": case_id,
@@ -174,11 +185,53 @@ def summarize_cases(
                 "expected_priority": expected.get("priority") if isinstance(expected, dict) else None,
                 "observed_actions": dict(observed_actions.most_common()),
                 "observed_priorities": dict(observed_priorities.most_common()),
+                "field_mismatches": dict(field_mismatches.most_common()),
                 "top_failures": top_counts(row.get("failure_type") or "PASS" for row in items),
                 "input": case.get("input", ""),
             }
         )
     return sorted(summaries, key=lambda row: (-row["failures"], row["case_id"]))
+
+
+def summarize_field_mismatches(cases_summary: list[dict[str, Any]]) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    for row in cases_summary:
+        counts.update(row.get("field_mismatches") or {})
+    return dict(counts.most_common())
+
+
+def semantically_equal(observed: Any, expected: Any) -> bool:
+    if isinstance(expected, list):
+        return sorted(map(str, observed or [])) == sorted(map(str, expected)) if isinstance(observed, list) else False
+    return observed == expected
+
+
+def write_cases_csv(analysis: dict[str, Any], out_path: Path) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "case_id",
+        "runs",
+        "failures",
+        "failure_rate",
+        "expected_action",
+        "expected_priority",
+        "observed_actions",
+        "observed_priorities",
+        "field_mismatches",
+        "top_failures",
+        "input",
+    ]
+    with out_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in analysis.get("cases", []):
+            writer.writerow({key: serialize_csv_value(row.get(key)) for key in fieldnames})
+
+
+def serialize_csv_value(value: Any) -> str:
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return "" if value is None else str(value)
 
 
 def expected_from_errors(rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -256,15 +309,21 @@ def markdown_report(analysis: dict[str, Any]) -> str:
         )
     lines.append("")
     lines.extend(["## Hardest Cases", ""])
-    lines.append("| case | failures/runs | expected action | observed actions | top failures | input |")
-    lines.append("| --- | ---: | --- | --- | --- | --- |")
+    lines.append("| case | failures/runs | expected action | observed actions | field mismatches | top failures | input |")
+    lines.append("| --- | ---: | --- | --- | --- | --- | --- |")
     for row in analysis.get("cases", [])[:20]:
         input_text = str(row.get("input") or "").replace("|", "\\|")
         if len(input_text) > 120:
             input_text = input_text[:117] + "..."
         lines.append(
-            f"| {row.get('case_id')} | {row.get('failures')}/{row.get('runs')} | {row.get('expected_action') or ''} | {row.get('observed_actions')} | {row.get('top_failures')} | {input_text} |"
+            f"| {row.get('case_id')} | {row.get('failures')}/{row.get('runs')} | {row.get('expected_action') or ''} | {row.get('observed_actions')} | {row.get('field_mismatches')} | {row.get('top_failures')} | {input_text} |"
         )
+    lines.append("")
+    lines.extend(["## Field Mismatches", ""])
+    lines.append("| field | mismatches |")
+    lines.append("| --- | ---: |")
+    for key, value in (analysis.get("field_mismatches") or {}).items():
+        lines.append(f"| {key} | {value} |")
     lines.append("")
     lines.extend(["## Failure Types", ""])
     lines.append("| failure type | count |")

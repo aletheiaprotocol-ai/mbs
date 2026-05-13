@@ -97,7 +97,7 @@ mbs agent-tools --list
 mbs make-response-template --cases examples/tool_argument_generation/cases.jsonl --out provider_responses.template.jsonl --output-field tool_call
 mbs adapt-responses --schema examples/tool_argument_generation/schema.json --responses provider_responses.jsonl --out provider_responses.mbs.json
 python scripts/make_tuning_dataset.py --mbs-result results/hard_agent_routing/provider.mbs.json --cases examples/hard_agent_routing/cases.jsonl --schema examples/hard_agent_routing/schema.json --out results/training/hard_agent_routing_candidates.jsonl
-python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/*.mbs.json" --cases examples/hard_agent_routing/cases.jsonl --out-md results/hard_agent_routing/failure_analysis.md
+python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/*.mbs.json" --cases examples/hard_agent_routing/cases.jsonl --out-md results/hard_agent_routing/failure_analysis.md --out-csv results/hard_agent_routing/failure_analysis.csv
 ```
 - Adapter smoke fixtures: `examples/tool_argument_generation/provider_*_responses.jsonl`
 

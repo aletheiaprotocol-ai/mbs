@@ -15,6 +15,7 @@ Runner scripts:
 - `scripts/mn5_mbs_qwen3b.slurm`
 - `scripts/mn5_mbs_hf_model.slurm`
 - `scripts/mn5_submit_mbs_hf_jobs.sh`
+- `scripts/mn5_mbs_llama_variants.slurm`
 
 ## Current Status
 
@@ -74,3 +75,7 @@ Next evidence steps:
 	mismatch from model capability;
 - add Qwen 3B and larger cached/AWQ models to the same 40-case fixture;
 - compare repeated semantic mismatch clusters with `scripts/analyze_mbs_failures.py`.
+
+The Llama variant runner tests `default`, `compact`, and `explicit_keys` prompt
+styles plus a longer 512-token budget. This is designed to distinguish a
+collector/prompt formatting failure from a model-capability failure.
