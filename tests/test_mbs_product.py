@@ -245,6 +245,68 @@ def test_cli_adapt_responses_writes_reportable_result(tmp_path, capsys):
     assert written["rows"][0]["trace"]["model"] == "provider-x"
 
 
+def test_public_adapter_fixture_supports_report_and_compare(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    schema_path = root / "examples" / "tool_argument_generation" / "schema.json"
+    cases_path = root / "examples" / "tool_argument_generation" / "cases.jsonl"
+    text_responses = root / "examples" / "tool_argument_generation" / "provider_text_responses.jsonl"
+    tool_responses = root / "examples" / "tool_argument_generation" / "provider_tool_call_responses.jsonl"
+    text_out = tmp_path / "text.json"
+    tool_out = tmp_path / "tool_call.json"
+
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(text_responses),
+                "--model",
+                "fixture-provider",
+                "--decoding-mode",
+                "text",
+                "--out",
+                str(text_out),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(tool_responses),
+                "--model",
+                "fixture-provider",
+                "--decoding-mode",
+                "tool_call",
+                "--out",
+                str(tool_out),
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    report = aggregate_results([tool_out])
+    comparison = compare_results([text_out], [tool_out], key_fields=["schema", "model", "language"])
+
+    assert report["summary"]["traceable_case_rows"] == 2
+    assert report["summary"]["missing_trace_rows"] == 0
+    assert report["rows"][0]["schema_valid_rate"] == 1.0
+    assert comparison["status"] == "PASS"
+    assert any(item["metric"] == "schema_valid_rate" and item["delta"] > 0 for item in comparison["comparisons"])
+
+
 def test_cli_agent_tools_lists_and_calls(tmp_path, capsys):
     schema_path = tmp_path / "schema.json"
     schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")

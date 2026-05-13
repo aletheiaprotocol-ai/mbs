@@ -1,0 +1,2 @@
+{"case_id":"tool_001","tool_call":{"function":{"name":"route_support_tool","arguments":{"tool":"escalate_case","priority":"HIGH","reason":"Possible account takeover requires escalation."}}},"tokens":{"output":17}}
+{"case_id":"tool_002","tool_call":{"function":{"name":"route_support_tool","arguments":{"tool":"search_customer","priority":"MEDIUM","reason":"Invoice status requires customer lookup."}}},"tokens":{"output":15}}

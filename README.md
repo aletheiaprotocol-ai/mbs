@@ -83,6 +83,7 @@ mbs report --results benchmarks/results/*.json --exclude-infra --require-traces 
 mbs agent-tools --list
 mbs adapt-responses --schema examples/tool_argument_generation/schema.json --responses provider_responses.jsonl --out provider_responses.mbs.json
 ```
+- Adapter smoke fixtures: `examples/tool_argument_generation/provider_*_responses.jsonl`
 
 ## Docs
 

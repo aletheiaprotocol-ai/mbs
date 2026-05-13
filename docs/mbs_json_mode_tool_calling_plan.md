@@ -90,6 +90,44 @@ mbs compare \
   --match-on schema,model,prompt_style,decoding_mode,language
 ```
 
+## Reproducible Adapter Smoke Pipeline
+
+The repository includes tiny provider-response fixtures for the tool-argument
+example:
+
+- `examples/tool_argument_generation/provider_text_responses.jsonl`
+- `examples/tool_argument_generation/provider_tool_call_responses.jsonl`
+
+Run the smoke pipeline:
+
+```bash
+mbs adapt-responses \
+  --schema examples/tool_argument_generation/schema.json \
+  --cases examples/tool_argument_generation/cases.jsonl \
+  --responses examples/tool_argument_generation/provider_text_responses.jsonl \
+  --model fixture-provider \
+  --decoding-mode text \
+  --out results/text_fixture.mbs.json
+
+mbs adapt-responses \
+  --schema examples/tool_argument_generation/schema.json \
+  --cases examples/tool_argument_generation/cases.jsonl \
+  --responses examples/tool_argument_generation/provider_tool_call_responses.jsonl \
+  --model fixture-provider \
+  --decoding-mode tool_call \
+  --out results/tool_call_fixture.mbs.json
+
+mbs report --results results/tool_call_fixture.mbs.json --require-traces --summary-only
+
+mbs compare \
+  --baseline results/text_fixture.mbs.json \
+  --current results/tool_call_fixture.mbs.json \
+  --match-on schema,model,language
+```
+
+This proves only that the adapter, report, and compare pipeline works on fixture
+data. It is a smoke test, not benchmark evidence for any provider or model.
+
 For controlled mode ablations, compare on shared identity fields and keep the
 changed field explicit in the report:
 

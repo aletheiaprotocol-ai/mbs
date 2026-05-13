@@ -1,0 +1,2 @@
+{"case_id":"tool_001","response":"Sure — I would call escalate_case with HIGH priority because account takeover is security-sensitive."}
+{"case_id":"tool_002","response":{"tool":"search_customer","priority":"MEDIUM","reason":"Customer is asking about invoice status, so customer lookup is appropriate."},"tokens":{"output":18}}
