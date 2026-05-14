@@ -1,6 +1,6 @@
-# MBS-Lang Azure Provider Summary — 2026-05-14
+# MBS-Lang Azure Provider Matrix — 2026-05-14
 
-This package is a sanitized public summary of one real Azure provider MBS-Lang evidence run.
+This package is a sanitized public summary of three real Azure provider MBS-Lang evidence runs.
 
 ## Evidence Boundary
 
@@ -9,7 +9,7 @@ This is **provider behavior evidence** only for:
 - schema: `examples/multilingual_risk_review/schema.json`
 - cases: `examples/multilingual_risk_review/cases.jsonl`
 - languages: `ar`, `de`, `en`, `es`, `fr`, `hu`, `tr`
-- model/deployment: `gpt-5-3-chat`
+- model/deployments: `gpt-5-3-chat`, `gpt-4-1-nano`, `gpt-5-nano`
 - mode: `json_mode`
 - gate: `benchmarks/provider_lang_gate.example.yaml`
 - run date: `2026-05-14`
@@ -18,11 +18,15 @@ It is not broad multilingual reliability evidence and it is not an independent t
 
 Raw provider outputs are not included in this public package. They remain in ignored local `results/` paths unless scrubbed and intentionally released.
 
-## Result
+## Results
 
 | model | gate | cases | traceable | schema | semantic | clean JSON | infra failures | languages |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | `gpt-5-3-chat` | `PASS` | 7 | 7 | 1.0 | 1.0 | 1.0 | 0 | ar/de/en/es/fr/hu/tr |
+| `gpt-4-1-nano` | `PASS` | 7 | 7 | 1.0 | 1.0 | 1.0 | 0 | ar/de/en/es/fr/hu/tr |
+| `gpt-5-nano` | `FAIL` | 7 | 7 | 0.0 | 0.0 | 0.0 | 0 | ar/de/en/es/fr/hu/tr |
+
+The `gpt-5-nano` row is an honest provider gate failure, not an infrastructure failure: all seven rows were traceable and classified as `invalid_json` under this JSON-mode contract.
 
 ## Reproduce the Evidence Flow
 
@@ -43,4 +47,4 @@ python scripts/run_lang_provider_evidence.py \
 
 ## Interpretation
 
-The run passed the configured multilingual provider gate with no infrastructure failures and complete trace coverage. This is useful provider evidence for the listed narrow task. The next evidence gate is to repeat the same flow across additional providers, OSS/HPC models, schemas, seeds, and languages.
+Two deployments passed the configured multilingual provider gate, and one deployment failed cleanly on format/schema behavior with no infrastructure failures. This is useful provider evidence for the listed narrow task. The next evidence gate is to repeat the same flow across additional providers, OSS/HPC models, schemas, seeds, and languages.
