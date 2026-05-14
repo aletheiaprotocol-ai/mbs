@@ -238,6 +238,15 @@ python scripts/run_nested_provider_evidence.py \
   --out-dir results/nested_oss_evidence
 ```
 
+Common local endpoint defaults:
+
+- vLLM OpenAI server: `--endpoint http://127.0.0.1:8000`;
+- LM Studio local server: `--endpoint http://127.0.0.1:1234`;
+- Ollama OpenAI-compatible endpoint: `--endpoint http://127.0.0.1:11434/v1`.
+
+Use `--classification oss` for local/open model behavior. Do not classify local
+fixture JSONL as `oss`; fixture rows remain software/example checks only.
+
 One-command path for Azure OpenAI uses environment variables for the key and
 endpoint; secrets are not written to disk:
 
@@ -273,6 +282,9 @@ When the underlying MBS provider gate fails, `run_nested_provider_evidence.py`
 still writes `manifest.json`, `gate.json`, `triage.json`, `report.md`,
 `evidence_pack/`, and `run_manifest.json`. The command exits nonzero so CI can
 block a regression, but the artifacts remain reviewable evidence.
+
+For a sanitized example of interpreting multiple real Azure provider runs on the
+hard nested suite, see `docs/mbs_nested_provider_matrix_may2026.md`.
 
 ```bash
 python scripts/build_nested_provider_evidence.py \
