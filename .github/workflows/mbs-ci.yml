@@ -38,6 +38,9 @@ jobs:
       - name: Enforce MBS threshold gate
         run: mbs gate --results benchmarks/results/ci_bench.json --config benchmarks/ci_gate.yaml --out benchmarks/results/ci_gate.json
 
+      - name: Build downloadable MBS evidence pack
+        run: mbs evidence-pack --results benchmarks/results/ci_bench.json --gate-config benchmarks/ci_gate.yaml --classification ci --copy-results --out-dir benchmarks/results/evidence_pack_ci
+
       - name: Upload MBS CI artifacts
         uses: actions/upload-artifact@v4
         if: always()
@@ -47,6 +50,7 @@ jobs:
             benchmarks/results/ci_bench.json
             benchmarks/results/ci_report.md
             benchmarks/results/ci_gate.json
+            benchmarks/results/evidence_pack_ci/**
             benchmarks/results/sample_benchmark.json
             benchmarks/results/sample_benchmark.md
             docs/mbs_evidence_brief.md

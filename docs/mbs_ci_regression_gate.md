@@ -39,6 +39,10 @@ mbs evidence-pack --results benchmarks/results/ci_bench.json --gate-config bench
 The `.[test]` extra installs the test runner used by CI. A clean GitHub runner
 does not inherit local development packages.
 
+The workflow uploads `benchmarks/results/evidence_pack_ci/` as a downloadable
+artifact. That directory includes a reviewer-friendly `README.md`, a
+machine-readable `manifest.json`, report, gate, triage, and copied raw results.
+
 ## Recommended Pull Request Rule
 
 Block merge if any of these fail:
