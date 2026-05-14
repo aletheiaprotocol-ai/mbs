@@ -109,6 +109,12 @@ def main() -> int:
             "nested_schema_error_present": _has_error(bad_payload, "customer.verified", "wrong_type")
             and _has_error(bad_payload, "actions[0].currency", "missing_required_key")
             and _has_error(bad_payload, "actions[0].amount", "wrong_type"),
+            "strict_extra_key_error_present": _has_error(bad_payload, "customer.tier", "extra_key")
+            and _has_error(bad_payload, "actions[0].memo", "extra_key")
+            and _has_error(bad_payload, "debug", "extra_key"),
+            "joined_enum_error_present": _has_error(bad_payload, "priority", "invalid_enum", hint="joined_enum_values"),
+            "case_mismatch_error_present": _has_error(bad_payload, "priority", "invalid_enum", hint="case_mismatch"),
+            "invalid_json_error_present": _has_error(bad_payload, "$", "invalid_json"),
             "semantic_mismatch_present": _has_error(bad_payload, "$", "semantic_mismatch"),
         },
         "next_evidence_gate": "run real provider or OSS outputs against examples/nested_tool_arguments and classify those outputs separately",
@@ -116,11 +122,15 @@ def main() -> int:
     passed = (
         manifest["checks"]["good_schema_valid_rate"] == 1.0
         and manifest["checks"]["good_semantic_correct_rate"] == 1.0
-        and manifest["checks"]["bad_schema_valid_rate"] == 0.5
-        and manifest["checks"]["bad_semantic_correct_rate"] == 0.5
+        and manifest["checks"]["bad_schema_valid_rate"] < 0.5
+        and manifest["checks"]["bad_semantic_correct_rate"] < 0.5
         and manifest["checks"]["good_gate_status"] == "PASS"
         and manifest["checks"]["bad_triage_status"] == "FAIL"
         and manifest["checks"]["nested_schema_error_present"]
+        and manifest["checks"]["strict_extra_key_error_present"]
+        and manifest["checks"]["joined_enum_error_present"]
+        and manifest["checks"]["case_mismatch_error_present"]
+        and manifest["checks"]["invalid_json_error_present"]
         and manifest["checks"]["semantic_mismatch_present"]
     )
     manifest["status"] = "PASS" if passed else "FAIL"
@@ -144,10 +154,12 @@ def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
-def _has_error(payload: dict[str, Any], field: str, error_type: str) -> bool:
+def _has_error(payload: dict[str, Any], field: str, error_type: str, *, hint: str | None = None) -> bool:
     for row in payload.get("rows", []):
         for error in row.get("errors", []):
             if error.get("field") == field and error.get("type") == error_type:
+                if hint is not None and error.get("hint") != hint:
+                    continue
                 return True
     return False
 

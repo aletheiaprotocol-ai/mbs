@@ -7,7 +7,8 @@ thresholds:
   require_traces: true
 
   # Coverage requirements: the gate should fail if the run is too small to trust.
-  min_rows: 4
+  min_rows: 1
+  min_traceable_case_rows: 8
   min_total_runs: 8
   min_models: 1
   min_schemas: 1

@@ -50,6 +50,63 @@ Optional fields that MBS preserves or uses:
 - `latency_s`
 - `provider_error` / `api_error` / `infra_failure`
 
+Never write API keys, bearer tokens, full request headers, or cloud access keys
+into response JSONL. Record non-secret reproduction metadata such as model name,
+deployment name, API version, decoding mode, seed, temperature, and timestamp in
+the evidence manifest or run notes.
+
+## Minimal Provider SDK Collection Pattern
+
+The safest provider workflow is:
+
+1. load fixed cases from `cases.jsonl`;
+2. call the provider SDK with the exact schema/tool definition;
+3. write one JSONL row per case with `case_id`, `model`, `decoding_mode`,
+   `tool_calls` or `response`, `tokens`, and `latency_s`;
+4. run `mbs adapt-responses`, `mbs report`, `mbs gate`, `mbs triage`, and
+   `mbs evidence-pack`.
+
+Minimal Python skeleton for SDKs that return OpenAI-style tool calls:
+
+```python
+import json
+import os
+import time
+from pathlib import Path
+
+# Use your provider SDK here. Keep secrets in environment variables.
+# client = ProviderClient(api_key=os.environ["PROVIDER_API_KEY"])
+
+schema = json.loads(Path("examples/nested_tool_arguments/schema.json").read_text())
+cases = [json.loads(line) for line in Path("examples/nested_tool_arguments/cases.jsonl").read_text().splitlines() if line]
+
+rows = []
+for case in cases:
+  started = time.time()
+  # response = client.chat.completions.create(
+  #     model="provider-model-id",
+  #     messages=[...],
+  #     tools=[{"type": "function", "function": {"name": "route_support_tool", "parameters": schema}}],
+  #     tool_choice={"type": "function", "function": {"name": "route_support_tool"}},
+  # )
+  rows.append({
+    "case_id": case["id"],
+    "input": case["input"],
+    "model": "provider-model-id",
+    "decoding_mode": "tool_call",
+    "tool_calls": [],  # fill with response.choices[0].message.tool_calls
+    "latency_s": round(time.time() - started, 4),
+  })
+
+Path("results/provider_nested_tool_call.responses.jsonl").write_text(
+  "\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n",
+  encoding="utf-8",
+)
+```
+
+If the SDK returns raw JSON text instead of tool calls, store it in `response` or
+`output`; MBS will validate whether it is clean JSON or prose-wrapped JSON.
+
 ## 1. Text-Mode Recipe
 
 Text-mode rows are useful because they catch a common failure: the model explains
@@ -136,10 +193,11 @@ mbs evidence-pack \
 ```
 
 For nested tool arguments with arrays and nested objects, see
-`examples/nested_tool_arguments/`. The bad fixture intentionally includes a
-wrong nested boolean, missing nested array key, wrong nested amount type, and a
-valid-schema-but-wrong tool choice so reports separate schema failures from
-semantic mismatch.
+`examples/nested_tool_arguments/`. The hard fixture now uses eight cases covering
+multi-action arrays, zero-amount audit/notify cases, enum casing traps, joined
+enum alternatives, prompt-injection text, strict `additionalProperties: false`,
+prose-wrapped JSON, and valid-schema-but-wrong tool choices so reports separate
+schema failures from semantic mismatch.
 
 To generate reviewable fixture artifacts for that hard example:
 
@@ -196,6 +254,20 @@ python scripts/run_nested_provider_evidence.py \
 
 Use `--dry-run --json` first to inspect the collection/build commands without
 calling a provider.
+
+The default real-provider gate in `benchmarks/provider_gate.example.yaml` checks
+that the run is large enough to be credible for this narrow suite:
+
+- at least one aggregate report row;
+- at least eight traceable case rows;
+- at least eight total case runs;
+- at least one model and one schema;
+- no missing traces, uncheckable rows, or infra failures.
+
+A provider can be perfectly schema-valid and still fail the gate on semantic
+correctness. Treat that as useful model-behavior evidence, not a tooling error:
+the report and triage files identify which cases were schema-valid but chose the
+wrong tool or priority.
 
 ```bash
 python scripts/build_nested_provider_evidence.py \

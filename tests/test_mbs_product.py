@@ -68,6 +68,21 @@ def test_validate_extra_keys_are_review_when_otherwise_valid():
     assert result["warnings"] == [{"field": "unexpected", "type": "extra_key"}]
 
 
+def test_validate_additional_properties_false_blocks_extra_keys():
+    strict_schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {"decision": {"type": "string"}},
+        "required": ["decision"],
+    }
+
+    result = validate_output(strict_schema, {"decision": "REVIEW", "unexpected": True})
+
+    assert result["schema_valid"] is False
+    assert result["errors"] == [{"field": "unexpected", "type": "extra_key"}]
+    assert result["warnings"] == []
+
+
 def test_validate_invented_enum_failure_type():
     result = validate_output(SCHEMA, {"decision": "ALLOW", "risk_level": "LOW", "reason": "bad enum"})
 
@@ -448,18 +463,29 @@ def test_nested_tool_argument_fixtures_separate_schema_and_semantic_failures(tmp
     good_payload = json.loads(good_out.read_text(encoding="utf-8"))
     bad_payload = json.loads(bad_out.read_text(encoding="utf-8"))
     first_bad_errors = bad_payload["rows"][0]["errors"]
+    failure_types = {row["case_id"]: row["failure_type"] for row in bad_payload["rows"]}
+    nested_004_errors = bad_payload["rows"][3]["errors"]
+    nested_005_errors = bad_payload["rows"][4]["errors"]
+    nested_006_errors = bad_payload["rows"][5]["errors"]
 
     assert good_payload["summary"]["schema_valid_rate"] == 1.0
     assert good_payload["summary"]["semantic_correct_rate"] == 1.0
-    assert bad_payload["summary"]["schema_valid_rate"] == 0.5
-    assert bad_payload["summary"]["semantic_correct_rate"] == 0.5
+    assert bad_payload["summary"]["runs"] == 8
+    assert bad_payload["summary"]["schema_valid_rate"] == 0.375
+    assert bad_payload["summary"]["semantic_correct_rate"] == 0.25
     assert {"field": "customer.verified", "type": "wrong_type", "expected": "boolean", "received": "str"} in first_bad_errors
     assert {"field": "actions[0].currency", "type": "missing_required_key"} in first_bad_errors
     assert {"field": "actions[0].amount", "type": "wrong_type", "expected": "number", "received": "str"} in first_bad_errors
     assert bad_payload["rows"][0]["semantic_correct"] is True
     assert bad_payload["rows"][1]["schema_valid"] is True
     assert bad_payload["rows"][1]["semantic_correct"] is False
-    assert bad_payload["rows"][1]["failure_type"] == "semantic_mismatch"
+    assert failure_types["nested_002"] == "semantic_mismatch"
+    assert failure_types["nested_003"] == "invalid_json"
+    assert {"field": "customer.tier", "type": "extra_key"} in nested_004_errors
+    assert {"field": "actions[0].memo", "type": "extra_key"} in nested_004_errors
+    assert {"field": "debug", "type": "extra_key"} in nested_004_errors
+    assert nested_005_errors[0]["hint"] == "joined_enum_values"
+    assert nested_006_errors[0]["hint"] == "case_mismatch"
 
 
 def test_adapter_fixture_gate_script_writes_manifest(tmp_path, monkeypatch, capsys):
@@ -507,6 +533,10 @@ def test_nested_tool_fixture_pack_script_writes_evidence_packs(tmp_path, monkeyp
     assert payload["status"] == "PASS"
     assert manifest["classification"] == "fixture_smoke_not_provider_benchmark"
     assert manifest["checks"]["nested_schema_error_present"] is True
+    assert manifest["checks"]["strict_extra_key_error_present"] is True
+    assert manifest["checks"]["joined_enum_error_present"] is True
+    assert manifest["checks"]["case_mismatch_error_present"] is True
+    assert manifest["checks"]["invalid_json_error_present"] is True
     assert manifest["checks"]["semantic_mismatch_present"] is True
     assert (tmp_path / "evidence_pack_good" / "manifest.json").exists()
     assert (tmp_path / "evidence_pack_bad" / "triage.json").exists()

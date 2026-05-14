@@ -1,5 +1,6 @@
 {
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "tool": {
       "type": "string",
@@ -12,9 +13,14 @@
     },
     "customer": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "id": {"type": "string"},
-        "verified": {"type": "boolean"}
+        "id": {
+          "type": "string"
+        },
+        "verified": {
+          "type": "boolean"
+        }
       },
       "required": ["id", "verified"]
     },
@@ -22,15 +28,26 @@
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
-          "type": {"type": "string", "enum": ["refund", "notify", "audit"]},
-          "amount": {"type": "number"},
-          "currency": {"type": "string", "enum": ["EUR", "USD", "GBP"]}
+          "type": {
+            "type": "string",
+            "enum": ["refund", "notify", "audit"]
+          },
+          "amount": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string",
+            "enum": ["EUR", "USD", "GBP"]
+          }
         },
         "required": ["type", "amount", "currency"]
       }
     },
-    "reason": {"type": "string"}
+    "reason": {
+      "type": "string"
+    }
   },
   "required": ["tool", "priority", "customer", "actions", "reason"]
 }

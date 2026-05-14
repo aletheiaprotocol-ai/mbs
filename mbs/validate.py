@@ -69,7 +69,11 @@ def _validate_schema(
                 _validate_schema(child_schema, value[key], _join(path, key), errors, warnings)
         for key in value.keys():
             if key not in properties:
-                warnings.append({"field": _join(path, key), "type": "extra_key"})
+                extra = {"field": _join(path, key), "type": "extra_key"}
+                if schema.get("additionalProperties") is False:
+                    errors.append(extra)
+                else:
+                    warnings.append(extra)
         return
 
     if expected_type == "array":

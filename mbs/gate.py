@@ -11,6 +11,7 @@ from .report import aggregate_results, trace_errors
 
 DEFAULT_THRESHOLDS = {
     "min_rows": 1,
+    "min_traceable_case_rows": None,
     "min_total_runs": 1,
     "min_models": 1,
     "min_schemas": 1,
@@ -58,6 +59,7 @@ def evaluate_gate(
     _check_min(failures, summary, "mean_semantic_correct_rate", thresholds.get("min_semantic_correct_rate"))
     _check_min(failures, summary, "mean_clean_json_rate", thresholds.get("min_clean_json_rate"))
     _check_min(failures, summary, "rows", thresholds.get("min_rows"))
+    _check_min(failures, summary, "traceable_case_rows", thresholds.get("min_traceable_case_rows"))
     _check_min(failures, summary, "total_runs", thresholds.get("min_total_runs"))
     _check_min_count(failures, summary, "models", thresholds.get("min_models"))
     _check_min_count(failures, summary, "schemas", thresholds.get("min_schemas"))

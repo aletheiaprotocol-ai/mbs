@@ -89,8 +89,9 @@ The repository includes `benchmarks/provider_gate.example.yaml` as a starting
 point for real provider or OSS model gates. It adds coverage checks so a tiny
 run cannot accidentally pass as credible evidence:
 
-- minimum report rows;
-- minimum case runs;
+- minimum aggregate report rows;
+- minimum traceable case rows;
+- minimum total case runs;
 - minimum model count;
 - minimum schema count;
 - trace coverage required;
