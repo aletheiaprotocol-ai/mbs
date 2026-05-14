@@ -557,6 +557,89 @@ def test_nested_provider_evidence_script_classifies_fixture_pack(tmp_path):
     assert (out_dir / "evidence_pack" / "raw_results" / "nested_provider.mbs.json").exists()
 
 
+def test_nested_provider_runner_reuses_existing_responses(tmp_path, monkeypatch):
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "run_nested_provider_evidence.py"
+    spec = importlib.util.spec_from_file_location("run_nested_provider_evidence", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    out_dir = tmp_path / "nested_provider_run"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_nested_provider_evidence.py",
+            "--root",
+            str(root),
+            "--responses",
+            str(root / "examples" / "nested_tool_arguments" / "provider_tool_call_good.jsonl"),
+            "--out-dir",
+            str(out_dir),
+            "--model",
+            "fixture-nested-tool-provider",
+            "--mode",
+            "tool_call",
+            "--classification",
+            "fixture",
+            "--json",
+        ],
+    )
+
+    assert module.main() == 0
+    run_manifest = json.loads((out_dir / "run_manifest.json").read_text(encoding="utf-8"))
+    evidence_manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+
+    assert run_manifest["status"] == "PASS"
+    assert run_manifest["collected_responses"] is False
+    assert run_manifest["classification_label"] == "fixture_smoke_not_provider_benchmark"
+    assert evidence_manifest["checks"]["gate_status"] == "PASS"
+    assert (out_dir / "run_plan.json").exists()
+    assert (out_dir / "evidence_pack" / "manifest.json").exists()
+
+
+def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "run_nested_provider_evidence.py"
+    spec = importlib.util.spec_from_file_location("run_nested_provider_evidence_dry_run", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    out_dir = tmp_path / "nested_provider_dry_run"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_nested_provider_evidence.py",
+            "--root",
+            str(root),
+            "--out-dir",
+            str(out_dir),
+            "--model",
+            "provider-model",
+            "--provider",
+            "openai-compatible",
+            "--endpoint",
+            "http://127.0.0.1:8000",
+            "--mode",
+            "tool_call",
+            "--classification",
+            "oss",
+            "--dry-run",
+            "--json",
+        ],
+    )
+
+    assert module.main() == 0
+    plan = json.loads((out_dir / "run_plan.json").read_text(encoding="utf-8"))
+
+    assert plan["classification"] == "oss"
+    assert plan["collected_responses"] is True
+    assert len(plan["commands"]) == 2
+    assert "collect_azure_openai_responses.py" in plan["commands"][0][1]
+    assert "build_nested_provider_evidence.py" in plan["commands"][1][1]
+
+
 def test_ci_artifact_checker_accepts_complete_fixture_outputs(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     results_dir = tmp_path / "benchmarks" / "results"

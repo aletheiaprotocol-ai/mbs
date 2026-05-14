@@ -157,6 +157,46 @@ After collecting real model JSONL against `examples/nested_tool_arguments/`, use
 the classified builder. Only use `provider`, `oss`, or `hpc` classification when
 the response JSONL came from that real model environment.
 
+One-command path when you already have response JSONL:
+
+```bash
+python scripts/run_nested_provider_evidence.py \
+  --responses results/provider_nested_tool_call.responses.jsonl \
+  --model provider-or-oss-model-id \
+  --classification provider \
+  --mode tool_call \
+  --out-dir results/nested_provider_evidence
+```
+
+One-command path when collecting from an OpenAI-compatible local/OSS endpoint:
+
+```bash
+python scripts/run_nested_provider_evidence.py \
+  --provider openai-compatible \
+  --endpoint http://127.0.0.1:8000 \
+  --model local-model-id \
+  --classification oss \
+  --mode tool_call \
+  --out-dir results/nested_oss_evidence
+```
+
+One-command path for Azure OpenAI uses environment variables for the key and
+endpoint; secrets are not written to disk:
+
+```bash
+python scripts/run_nested_provider_evidence.py \
+  --provider azure \
+  --model azure-deployment-name \
+  --deployment azure-deployment-name \
+  --api-key-env AZURE_OPENAI_API_KEY \
+  --classification provider \
+  --mode tool_call \
+  --out-dir results/nested_provider_evidence
+```
+
+Use `--dry-run --json` first to inspect the collection/build commands without
+calling a provider.
+
 ```bash
 python scripts/build_nested_provider_evidence.py \
   --responses results/provider_nested_tool_call.responses.jsonl \

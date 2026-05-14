@@ -98,6 +98,7 @@ mbs agent-tools --list
 mbs make-response-template --cases examples/tool_argument_generation/cases.jsonl --out provider_responses.template.jsonl --output-field tool_call
 mbs adapt-responses --schema examples/tool_argument_generation/schema.json --cases examples/tool_argument_generation/cases.jsonl --responses provider_responses.jsonl --model provider-model --decoding-mode tool_call --out provider_responses.mbs.json
 python scripts/run_nested_tool_fixture_pack.py --out-dir results/nested_tool_fixture_pack
+python scripts/run_nested_provider_evidence.py --responses results/provider_nested_tool_call.responses.jsonl --model provider-or-oss-model-id --classification provider --mode tool_call --out-dir results/nested_provider_evidence
 python scripts/build_nested_provider_evidence.py --responses results/provider_nested_tool_call.responses.jsonl --model provider-or-oss-model-id --decoding-mode tool_call --classification provider --gate-config benchmarks/provider_gate.example.yaml --out-dir results/nested_provider_evidence
 python scripts/assert_ci_artifacts.py --results-dir benchmarks/results
 python scripts/make_tuning_dataset.py --mbs-result results/hard_agent_routing/provider.mbs.json --cases examples/hard_agent_routing/cases.jsonl --schema examples/hard_agent_routing/schema.json --out results/training/hard_agent_routing_candidates.jsonl
@@ -106,6 +107,7 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 - Adapter smoke fixtures: `examples/tool_argument_generation/provider_*_responses.jsonl`
 - Hard nested tool-call fixtures: `examples/nested_tool_arguments/`
 - Hard nested provider/OSS evidence builder: `scripts/build_nested_provider_evidence.py`
+- One-command hard nested provider/OSS runner: `scripts/run_nested_provider_evidence.py`
 - CI artifact completeness gate: `scripts/assert_ci_artifacts.py`
 
 ## Docs

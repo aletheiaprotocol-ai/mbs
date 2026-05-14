@@ -124,6 +124,28 @@ mbs gate \
 mbs triage --results benchmarks/results/provider_tool_call.mbs.json --out benchmarks/results/provider_triage.json
 ```
 
+For the hard nested tool-call schema, use the one-command runner. It can reuse a
+saved response JSONL or collect from Azure/OpenAI-compatible endpoints before it
+builds the classified evidence pack:
+
+```bash
+python scripts/run_nested_provider_evidence.py \
+  --responses results/provider_nested_tool_call.responses.jsonl \
+  --model provider-or-oss-model-id \
+  --classification provider \
+  --mode tool_call \
+  --out-dir results/nested_provider_evidence
+
+python scripts/run_nested_provider_evidence.py \
+  --provider openai-compatible \
+  --endpoint http://127.0.0.1:8000 \
+  --model local-model-id \
+  --classification oss \
+  --mode tool_call \
+  --dry-run \
+  --json
+```
+
 If this gate fails, inspect `provider_gate.json`, the Markdown report, and the
 triage file. A gate failure is useful evidence: it tells you whether the problem
 is schema validity, semantic correctness, clean JSON formatting, trace coverage,
