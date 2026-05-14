@@ -2,6 +2,8 @@ import importlib.util
 import json
 from pathlib import Path
 
+import yaml
+
 
 REQUIRED_LANGUAGES = {"ar", "de", "en", "es", "fr", "hu", "tr"}
 REQUIRED_DOMAINS = {"fintech", "procurement", "qme_source_review", "support", "tool_call_safety"}
@@ -49,3 +51,22 @@ def test_mbs_lang_matrix_manifest_exposes_sprint5_metrics(tmp_path, monkeypatch,
     assert matrix["summary"]["valid_outputs"] == 15
     assert matrix["summary"]["failed_outputs"] == 0
     assert "not provider/model" in matrix["evidence_boundary"]
+
+
+def test_mbs_lang_provider_gate_matches_expanded_suite():
+    root = Path(__file__).resolve().parents[1]
+    gate = yaml.safe_load((root / "benchmarks" / "provider_lang_gate.example.yaml").read_text(encoding="utf-8"))
+    thresholds = gate["thresholds"]
+
+    assert thresholds["min_traceable_case_rows"] == 15
+    assert thresholds["min_total_runs"] == 15
+    assert thresholds["min_behavior_rows"] == 1
+
+
+def test_mbs_lang_provider_evidence_doc_matches_expanded_suite():
+    root = Path(__file__).resolve().parents[1]
+    doc = (root / "docs" / "mbs_lang_provider_evidence.md").read_text(encoding="utf-8")
+
+    assert "Rows: `15`" in doc
+    assert "at least 15 total runs / traceable case rows" in doc
+    assert "current 15-row suite" in doc

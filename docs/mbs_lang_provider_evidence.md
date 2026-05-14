@@ -29,8 +29,9 @@ python scripts/run_lang_provider_evidence.py \
 Current fixture result:
 
 - Classification label: `fixture_mbs_lang_not_provider_benchmark`
-- Rows: `7`
+- Rows: `15`
 - Languages: `ar`, `de`, `en`, `es`, `fr`, `hu`, `tr`
+- Domains: `fintech`, `procurement`, `qme_source_review`, `support`, `tool_call_safety`
 - Schema-valid rate: `1.0`
 - Semantic-correct rate: `1.0`
 - Clean-JSON rate: `1.0`
@@ -84,8 +85,10 @@ A reviewable MBS-Lang behavior claim should include:
 
 Use `benchmarks/provider_lang_gate.example.yaml` as the starting point. Copy and tune it for the target application risk; do not silently lower thresholds after seeing failures.
 
+The example gate is aligned to the current 15-row multilingual fixture surface and requires at least 15 total runs / traceable case rows for a real provider, OSS, or HPC behavior claim.
+
 ## Sanitized Public Summary
 
 The first sanitized provider summary is published at `docs/mbs_lang_provider_summary_20260514/README.md`.
 
-It records a seven-case Azure `gpt-5-3-chat` JSON-mode provider run with complete trace coverage and gate `PASS`, while keeping raw provider response JSONL out of the public package.
+It records historical seven-case Azure provider runs with complete trace coverage for the earlier MBS-Lang surface, while keeping raw provider response JSONL out of the public package. New provider/OSS/HPC runs should use the current 15-row suite and the updated provider language gate.
