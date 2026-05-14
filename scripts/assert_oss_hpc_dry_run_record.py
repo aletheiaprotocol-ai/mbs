@@ -18,6 +18,7 @@ FORBIDDEN_EVIDENCE_FLAGS = {
 def validate_record(path: Path) -> dict[str, Any]:
     record = json.loads(path.read_text(encoding="utf-8"))
     failures: list[str] = []
+    repo_root = path.resolve().parents[2] if len(path.resolve().parents) >= 3 else Path.cwd()
 
     if record.get("status") != "NO_EVIDENCE_DRY_RUN":
         failures.append("status must be NO_EVIDENCE_DRY_RUN")
@@ -44,12 +45,22 @@ def validate_record(path: Path) -> dict[str, Any]:
     if not dry_run_plan.get("would_build_evidence_pack"):
         failures.append("dry_run_plan must describe evidence-pack creation for real runs")
 
+    cases_path = repo_root / str(record.get("cases", ""))
+    if cases_path.exists():
+        actual_case_count = _count_jsonl(cases_path)
+        if record.get("case_count") != actual_case_count:
+            failures.append(f"case_count must match {record.get('cases')}: expected {actual_case_count}")
+
     non_claims = "\n".join(record.get("non_claims", []))
     for required in ["not an OSS benchmark", "not an HPC benchmark", "does not contain raw model outputs"]:
         if required not in non_claims:
             failures.append(f"missing non-claim: {required}")
 
     return {"status": "FAIL" if failures else "PASS", "failures": failures, "checked_urls": len(checked_urls)}
+
+
+def _count_jsonl(path: Path) -> int:
+    return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -4,6 +4,13 @@ This record documents Sprint 2 readiness for running the hard nested MBS suite a
 
 No reachable local endpoint was available during this check, so this package intentionally records **no model-behavior evidence**.
 
+Suite details:
+
+- Schema: `examples/nested_tool_arguments/schema.json`.
+- Cases: `examples/nested_tool_arguments/cases.jsonl`.
+- Active case count: 25.
+- Runner: `scripts/run_nested_provider_evidence.py`.
+
 ## Endpoint Probe
 
 Checked common local OpenAI-compatible URLs:

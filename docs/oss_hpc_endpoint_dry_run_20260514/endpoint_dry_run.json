@@ -6,7 +6,7 @@
   "suite": "hard_nested_tool_arguments",
   "schema": "examples/nested_tool_arguments/schema.json",
   "cases": "examples/nested_tool_arguments/cases.jsonl",
-  "case_count": 8,
+  "case_count": 25,
   "runner": "scripts/run_nested_provider_evidence.py",
   "gate_config": "benchmarks/provider_gate.example.yaml",
   "endpoint_probe": {
