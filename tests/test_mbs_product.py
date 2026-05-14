@@ -1001,6 +1001,19 @@ def test_mbs_lang_provider_summary_preserves_provider_boundary():
     assert all(row["infra_failed_rows"] == 0 for row in nano_rows)
 
 
+def test_mbs_lang_oss_hpc_dry_run_makes_no_model_claim():
+    root = Path(__file__).resolve().parents[1]
+    dry_run_path = root / "docs" / "mbs_lang_oss_hpc_endpoint_dry_run_20260514" / "endpoint_dry_run.json"
+    payload = json.loads(dry_run_path.read_text(encoding="utf-8"))
+
+    assert payload["model_behavior_evidence"] is False
+    assert payload["raw_provider_outputs_public"] is False
+    assert payload["planned_run"]["dry_run_only"] is True
+    assert payload["planned_run"]["classification"] == "oss"
+    assert payload["planned_run"]["provider"] == "openai-compatible"
+    assert "no OSS/HPC model pass/fail claim" in payload["evidence_boundary"]
+
+
 def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     script_path = root / "scripts" / "run_nested_provider_evidence.py"

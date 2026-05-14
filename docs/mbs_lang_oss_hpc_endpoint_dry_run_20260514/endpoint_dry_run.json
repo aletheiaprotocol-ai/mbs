@@ -1,0 +1,34 @@
+{
+  "title": "MBS-Lang OSS/HPC endpoint dry run",
+  "date": "2026-05-14",
+  "classification": "oss_hpc_endpoint_readiness_no_model_evidence",
+  "model_behavior_evidence": false,
+  "raw_provider_outputs_public": false,
+  "endpoint_probe": [
+    {"url": "http://127.0.0.1:8000/v1/models", "result": "not reachable"},
+    {"url": "http://127.0.0.1:1234/v1/models", "result": "not reachable"},
+    {"url": "http://127.0.0.1:11434/v1/models", "result": "not reachable"},
+    {"url": "http://localhost:8000/v1/models", "result": "not reachable"}
+  ],
+  "planned_run": {
+    "runner": "scripts/run_lang_provider_evidence.py",
+    "provider": "openai-compatible",
+    "endpoint": "http://127.0.0.1:8000",
+    "model": "local-oss-openai-compatible-placeholder",
+    "classification": "oss",
+    "mode": "json_mode",
+    "schema": "examples/multilingual_risk_review/schema.json",
+    "cases": "examples/multilingual_risk_review/cases.jsonl",
+    "gate_config": "benchmarks/provider_lang_gate.example.yaml",
+    "out_dir": "results/mbs_lang_oss_endpoint_dry_run_20260514",
+    "dry_run_only": true
+  },
+  "evidence_boundary": "This is endpoint readiness documentation only. No OSS/HPC endpoint was reachable, no raw responses were collected, no evidence pack was created, and no OSS/HPC model pass/fail claim is made.",
+  "required_for_real_evidence": [
+    "Start a reachable OpenAI-compatible endpoint exposing /v1/models and /v1/chat/completions.",
+    "Use a real served model id instead of the placeholder.",
+    "Run scripts/run_lang_provider_evidence.py without --dry-run.",
+    "Use --classification oss for local/open OSS endpoints or --classification hpc for HPC-served models.",
+    "Publish only sanitized aggregates unless raw responses are scrubbed and intentionally released."
+  ]
+}
