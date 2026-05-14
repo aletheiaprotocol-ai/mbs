@@ -857,6 +857,36 @@ def test_nested_retry_matrix_reports_repair_policies(tmp_path, monkeypatch, caps
     assert (tmp_path / "triage.json").exists()
 
 
+def test_mbs_lang_matrix_reports_token_fairness_and_boundaries(tmp_path, monkeypatch, capsys):
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "run_mbs_lang_matrix.py"
+    spec = importlib.util.spec_from_file_location("run_mbs_lang_matrix", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["run_mbs_lang_matrix.py", "--root", str(root), "--out-dir", str(tmp_path), "--json"],
+    )
+
+    assert module.main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    matrix = json.loads((tmp_path / "mbs_lang_matrix.json").read_text(encoding="utf-8"))
+
+    assert payload["status"] == "PASS"
+    assert payload["classification"] == "fixture_mbs_lang_matrix_not_provider_benchmark"
+    assert payload["checks"]["languages"] == ["ar", "de", "en", "es", "fr", "hu", "tr"]
+    assert payload["checks"]["rows"] == 8
+    assert payload["checks"]["case_files"] == 7
+    assert payload["checks"]["contract_boundary_failures"] == 0
+    assert payload["checks"]["schema_keys_preserved"] is True
+    assert payload["checks"]["enum_values_preserved"] is True
+    assert matrix["evidence_boundary"].startswith("Deterministic MBS-Lang fixture matrix")
+    assert all(row["token_fairness_ratio"] is not None for row in matrix["rows"])
+    assert (tmp_path / "mbs_lang_matrix.md").exists()
+
+
 def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     script_path = root / "scripts" / "run_nested_provider_evidence.py"

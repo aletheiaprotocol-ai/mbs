@@ -99,6 +99,7 @@ mbs make-response-template --cases examples/tool_argument_generation/cases.jsonl
 mbs adapt-responses --schema examples/tool_argument_generation/schema.json --cases examples/tool_argument_generation/cases.jsonl --responses provider_responses.jsonl --model provider-model --decoding-mode tool_call --out provider_responses.mbs.json
 python scripts/run_nested_tool_fixture_pack.py --out-dir results/nested_tool_fixture_pack
 python scripts/run_nested_retry_matrix.py --out-dir results/nested_retry_matrix_fixture
+python scripts/run_mbs_lang_matrix.py --out-dir results/mbs_lang_matrix_fixture
 python scripts/run_nested_provider_evidence.py --responses results/provider_nested_tool_call.responses.jsonl --model provider-or-oss-model-id --classification provider --mode tool_call --out-dir results/nested_provider_evidence
 python scripts/build_nested_provider_evidence.py --responses results/provider_nested_tool_call.responses.jsonl --model provider-or-oss-model-id --decoding-mode tool_call --classification provider --gate-config benchmarks/provider_gate.example.yaml --out-dir results/nested_provider_evidence
 python scripts/assert_ci_artifacts.py --results-dir benchmarks/results
@@ -110,6 +111,7 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 - Active hard nested tool-call fixtures: `examples/nested_tool_arguments/` 25-case suite with nested arrays, multi-action requests, unsafe-action traps, unsupported currency/jurisdiction, missing/stale/fake sources, prompt injection, identity ambiguity, partial verification, abstain/review cases, and retry-instruction drift
 - Archived Azure matrix case snapshot: `examples/nested_tool_arguments/cases_8_may2026.jsonl`
 - Hard nested retry/repair matrix fixture: `scripts/run_nested_retry_matrix.py`
+- MBS-Lang token-fairness fixture matrix: `scripts/run_mbs_lang_matrix.py`
 - Hard nested provider/OSS evidence builder: `scripts/build_nested_provider_evidence.py`
 - One-command hard nested provider/OSS runner: `scripts/run_nested_provider_evidence.py`
 - CI artifact completeness gate: `scripts/assert_ci_artifacts.py`
@@ -129,6 +131,7 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 - `docs/mbs_sanitized_evidence_release_may2026.md`
 - `docs/mbs_nested_provider_matrix_may2026.md`
 - `docs/mbs_retry_repair_matrix.md`
+- `docs/mbs_lang_matrix.md`
 - `docs/provider_matrix_summary_20260514/README.md`
 - `docs/oss_hpc_endpoint_dry_run_20260514/README.md`
 - `docs/mbs_azure_provider_benchmark_may2026.md`
