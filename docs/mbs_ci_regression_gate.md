@@ -88,7 +88,8 @@ run cannot accidentally pass as credible evidence:
 ## Adding A Real Agent Gate
 
 For your own agent, replace `benchmarks/models.yaml` with a config that points to
-your schemas and cases, or adapt provider responses first:
+your schemas and cases, or adapt provider responses first. See
+`docs/mbs_provider_recipes.md` for separate text, JSON-mode, and tool-call flows:
 
 ```bash
 mbs make-response-template \

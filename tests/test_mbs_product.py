@@ -337,6 +337,62 @@ def test_public_adapter_fixture_supports_report_and_compare(tmp_path):
     assert any(item["metric"] == "schema_valid_rate" and item["delta"] > 0 for item in comparison["comparisons"])
 
 
+def test_provider_json_mode_fixture_supports_gate_and_evidence_pack(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    schema_path = root / "examples" / "tool_argument_generation" / "schema.json"
+    cases_path = root / "examples" / "tool_argument_generation" / "cases.jsonl"
+    json_mode_responses = root / "examples" / "tool_argument_generation" / "provider_json_mode_responses.jsonl"
+    gate_config = root / "benchmarks" / "fixture_smoke_gate.yaml"
+    out_path = tmp_path / "provider_json_mode.mbs.json"
+    pack_dir = tmp_path / "evidence_pack"
+
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(json_mode_responses),
+                "--model",
+                "fixture-provider-json-mode",
+                "--decoding-mode",
+                "json_mode",
+                "--out",
+                str(out_path),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    assert main(["gate", "--results", str(out_path), "--config", str(gate_config), "--json"]) == 0
+    assert (
+        main(
+            [
+                "evidence-pack",
+                "--results",
+                str(out_path),
+                "--gate-config",
+                str(gate_config),
+                "--classification",
+                "fixture",
+                "--copy-results",
+                "--out-dir",
+                str(pack_dir),
+            ]
+        )
+        == 0
+    )
+    payload = json.loads(out_path.read_text(encoding="utf-8"))
+    manifest = json.loads((pack_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert payload["summary"]["schema_valid_rate"] == 1.0
+    assert payload["summary"]["semantic_correct_rate"] == 1.0
+    assert manifest["classification"] == "fixture_smoke_not_provider_benchmark"
+    assert manifest["checks"]["gate_status"] == "PASS"
+
+
 def test_adapter_fixture_gate_script_writes_manifest(tmp_path, monkeypatch, capsys):
     root = Path(__file__).resolve().parents[1]
     script_path = root / "scripts" / "run_adapter_fixture_gate.py"

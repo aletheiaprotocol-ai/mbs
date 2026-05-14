@@ -1,0 +1,2 @@
+{"case_id":"tool_001","output":{"tool":"escalate_case","priority":"HIGH","reason":"Possible account takeover requires immediate escalation."},"tokens":{"output":16}}
+{"case_id":"tool_002","output":{"tool":"search_customer","priority":"MEDIUM","reason":"Invoice status should be checked with customer lookup."},"tokens":{"output":15}}

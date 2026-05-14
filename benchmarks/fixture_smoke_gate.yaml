@@ -1,0 +1,17 @@
+# Small local fixture smoke gate.
+# This is for documentation/examples and software checks only, not provider
+# benchmark evidence. Use benchmarks/provider_gate.example.yaml for real
+# provider or OSS model runs.
+thresholds:
+  require_rows: true
+  require_traces: true
+  min_rows: 1
+  min_total_runs: 2
+  min_models: 1
+  min_schemas: 1
+  min_schema_valid_rate: 0.90
+  min_semantic_correct_rate: 0.80
+  min_clean_json_rate: 0.90
+  max_missing_trace_rows: 0
+  max_uncheckable_result_rows: 0
+  max_infra_failed_rows: 0

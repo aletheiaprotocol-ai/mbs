@@ -96,7 +96,7 @@ mbs report --results benchmarks/results/*.json --exclude-infra --require-traces 
 mbs evidence-pack --results benchmarks/results/ci_bench.json --gate-config benchmarks/ci_gate.yaml --classification ci --out-dir benchmarks/results/evidence_pack_ci
 mbs agent-tools --list
 mbs make-response-template --cases examples/tool_argument_generation/cases.jsonl --out provider_responses.template.jsonl --output-field tool_call
-mbs adapt-responses --schema examples/tool_argument_generation/schema.json --responses provider_responses.jsonl --out provider_responses.mbs.json
+mbs adapt-responses --schema examples/tool_argument_generation/schema.json --cases examples/tool_argument_generation/cases.jsonl --responses provider_responses.jsonl --model provider-model --decoding-mode tool_call --out provider_responses.mbs.json
 python scripts/make_tuning_dataset.py --mbs-result results/hard_agent_routing/provider.mbs.json --cases examples/hard_agent_routing/cases.jsonl --schema examples/hard_agent_routing/schema.json --out results/training/hard_agent_routing_candidates.jsonl
 python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/*.mbs.json" --cases examples/hard_agent_routing/cases.jsonl --out-md results/hard_agent_routing/failure_analysis.md --out-csv results/hard_agent_routing/failure_analysis.csv
 ```
@@ -112,6 +112,7 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 - `docs/mbs_lang.md`
 - `docs/mbs_model_behavior_guidance.md`
 - `docs/mbs_agent_tools.md`
+- `docs/mbs_provider_recipes.md`
 - `docs/mbs_ci_regression_gate.md`
 - `docs/mbs_azure_provider_benchmark_may2026.md`
 - `docs/mbs_failure_triage_examples.md`
@@ -145,9 +146,10 @@ mbs gate --results benchmarks/results/ci_bench.json --config benchmarks/ci_gate.
 
 The repository includes a ready-to-copy GitHub Actions workflow at
 `.github/workflows/mbs-ci.yml`. See `docs/mbs_ci_regression_gate.md` for the
-CI evidence boundary and provider-response extension path. For real provider or
-OSS gates, start from `benchmarks/provider_gate.example.yaml` and tune thresholds
-explicitly for the application risk.
+CI evidence boundary and `docs/mbs_provider_recipes.md` for text, JSON-mode,
+and tool-call provider response flows. For real provider or OSS gates, start
+from `benchmarks/provider_gate.example.yaml` and tune thresholds explicitly for
+the application risk.
 
 Treat easy local mock runs as install/software checks. Treat real-model,
 multi-schema, multi-case runs as benchmark evidence only when result JSON files,
