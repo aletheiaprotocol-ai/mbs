@@ -12,7 +12,8 @@ ignored/local unless intentionally scrubbed and approved for release.
 | Artifact | Purpose |
 | --- | --- |
 | `examples/nested_tool_arguments/schema.json` | Strict nested tool-argument schema with extra-key blocking. |
-| `examples/nested_tool_arguments/cases.jsonl` | Eight hard nested tool-call cases. |
+| `examples/nested_tool_arguments/cases_8_may2026.jsonl` | Frozen eight-case snapshot used by the May 2026 Azure matrix. |
+| `examples/nested_tool_arguments/cases.jsonl` | Active hard nested tool-call suite; expanded after the May 2026 Azure matrix. |
 | `scripts/run_nested_provider_evidence.py` | One-command collection/build runner. |
 | `scripts/build_nested_provider_evidence.py` | Classified evidence-pack builder for provider/OSS/HPC/fixture rows. |
 | `benchmarks/provider_gate.example.yaml` | Real provider/OSS/HPC example gate with trace and behavior coverage. |

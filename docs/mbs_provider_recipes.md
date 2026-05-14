@@ -193,11 +193,15 @@ mbs evidence-pack \
 ```
 
 For nested tool arguments with arrays and nested objects, see
-`examples/nested_tool_arguments/`. The hard fixture now uses eight cases covering
-multi-action arrays, zero-amount audit/notify cases, enum casing traps, joined
-enum alternatives, prompt-injection text, strict `additionalProperties: false`,
-prose-wrapped JSON, and valid-schema-but-wrong tool choices so reports separate
-schema failures from semantic mismatch.
+`examples/nested_tool_arguments/`. The active hard fixture now uses 25 cases
+covering multi-action arrays, zero-amount audit/notify cases, enum casing traps,
+joined enum alternatives, prompt-injection text, strict
+`additionalProperties: false`, unsupported currencies/jurisdictions,
+negative/zero amounts, missing/stale/fake sources, identity ambiguity, partial
+verification, abstain/review cases, retry-instruction drift, prose-wrapped JSON,
+and valid-schema-but-wrong tool choices so reports separate schema failures from
+semantic mismatch. The May 2026 Azure matrix remains tied to the frozen
+`cases_8_may2026.jsonl` snapshot.
 
 To generate reviewable fixture artifacts for that hard example:
 

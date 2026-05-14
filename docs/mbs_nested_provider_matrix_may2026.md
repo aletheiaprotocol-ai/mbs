@@ -19,7 +19,10 @@ headers, or raw provider logs that might contain sensitive metadata.
   strict extra-key blocking, enum traps, prompt-injection text, and
   schema-clean semantic mismatch cases.
 - Schema: `examples/nested_tool_arguments/schema.json`.
-- Cases: `examples/nested_tool_arguments/cases.jsonl`.
+- Cases: `examples/nested_tool_arguments/cases_8_may2026.jsonl`.
+- Note: the active `examples/nested_tool_arguments/cases.jsonl` suite has since
+  expanded to 25 cases; the Azure matrix above remains tied to the frozen
+  eight-case May 2026 snapshot.
 - Runner: `scripts/run_nested_provider_evidence.py`.
 - Gate: `benchmarks/provider_gate.example.yaml`.
 - Thresholds include trace coverage, `min_traceable_case_rows: 8`,

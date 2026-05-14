@@ -522,9 +522,9 @@ def test_nested_tool_argument_fixtures_separate_schema_and_semantic_failures(tmp
 
     assert good_payload["summary"]["schema_valid_rate"] == 1.0
     assert good_payload["summary"]["semantic_correct_rate"] == 1.0
-    assert bad_payload["summary"]["runs"] == 8
-    assert bad_payload["summary"]["schema_valid_rate"] == 0.375
-    assert bad_payload["summary"]["semantic_correct_rate"] == 0.25
+    assert bad_payload["summary"]["runs"] == 25
+    assert bad_payload["summary"]["schema_valid_rate"] == 0.68
+    assert bad_payload["summary"]["semantic_correct_rate"] == 0.16
     assert {"field": "customer.verified", "type": "wrong_type", "expected": "boolean", "received": "str"} in first_bad_errors
     assert {"field": "actions[0].currency", "type": "missing_required_key"} in first_bad_errors
     assert {"field": "actions[0].amount", "type": "wrong_type", "expected": "number", "received": "str"} in first_bad_errors
@@ -800,6 +800,26 @@ def test_oss_hpc_dry_run_record_makes_no_evidence_claim():
     assert record["evidence_boundary"]["raw_responses_collected"] is False
     assert record["evidence_boundary"]["evidence_pack_created"] is False
     assert record["evidence_boundary"]["aggregate_matrix_row_created"] is False
+
+
+def test_nested_tool_suite_expanded_to_twenty_five_cases():
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "assert_nested_tool_suite.py"
+    spec = importlib.util.spec_from_file_location("assert_nested_tool_suite", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    result = module.validate_suite(root)
+
+    assert result == {
+        "status": "PASS",
+        "failures": [],
+        "case_count": 25,
+        "good_rows": 25,
+        "bad_rows": 25,
+        "archived_case_count": 8,
+    }
 
 
 def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):

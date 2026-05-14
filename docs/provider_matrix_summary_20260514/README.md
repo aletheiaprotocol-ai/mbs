@@ -7,13 +7,13 @@ This package is a public-safe summary of the May 2026 Azure hard nested provider
 - Classification: `provider` / `real_provider_behavior_evidence_sanitized_summary`.
 - Suite: hard nested tool arguments.
 - Schema: `examples/nested_tool_arguments/schema.json`.
-- Cases: `examples/nested_tool_arguments/cases.jsonl`.
+- Cases: `examples/nested_tool_arguments/cases_8_may2026.jsonl`.
 - Case count: 8.
 - Runner: `scripts/run_nested_provider_evidence.py`.
 - Gate config: `benchmarks/provider_gate.example.yaml`.
 - Raw provider artifacts: **not public** in this package.
 
-This is narrow evidence. It proves only how the listed Azure OpenAI deployments behaved on the listed schema, cases, prompt/tool-call contract, gate, and run settings. It does not claim broad model reliability.
+This is narrow evidence. It proves only how the listed Azure OpenAI deployments behaved on the listed schema, frozen eight-case May 2026 case snapshot, prompt/tool-call contract, gate, and run settings. It does not claim broad model reliability. The active `examples/nested_tool_arguments/cases.jsonl` suite has since expanded to 25 cases.
 
 ## Matrix
 

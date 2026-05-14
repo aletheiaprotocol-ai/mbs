@@ -106,6 +106,8 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 ```
 - Adapter smoke fixtures: `examples/tool_argument_generation/provider_*_responses.jsonl`
 - Hard nested tool-call fixtures: `examples/nested_tool_arguments/` eight-case suite with nested arrays, strict extra-key blocking, enum traps, and semantic mismatch fixtures
+- Active hard nested tool-call fixtures: `examples/nested_tool_arguments/` 25-case suite with nested arrays, multi-action requests, unsafe-action traps, unsupported currency/jurisdiction, missing/stale/fake sources, prompt injection, identity ambiguity, partial verification, abstain/review cases, and retry-instruction drift
+- Archived Azure matrix case snapshot: `examples/nested_tool_arguments/cases_8_may2026.jsonl`
 - Hard nested provider/OSS evidence builder: `scripts/build_nested_provider_evidence.py`
 - One-command hard nested provider/OSS runner: `scripts/run_nested_provider_evidence.py`
 - CI artifact completeness gate: `scripts/assert_ci_artifacts.py`

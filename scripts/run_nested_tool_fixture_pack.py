@@ -122,7 +122,7 @@ def main() -> int:
     passed = (
         manifest["checks"]["good_schema_valid_rate"] == 1.0
         and manifest["checks"]["good_semantic_correct_rate"] == 1.0
-        and manifest["checks"]["bad_schema_valid_rate"] < 0.5
+        and manifest["checks"]["bad_schema_valid_rate"] < 0.8
         and manifest["checks"]["bad_semantic_correct_rate"] < 0.5
         and manifest["checks"]["good_gate_status"] == "PASS"
         and manifest["checks"]["bad_triage_status"] == "FAIL"
