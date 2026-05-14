@@ -54,14 +54,19 @@ def validate_summary(payload: dict[str, Any]) -> list[str]:
         failures.append("non_claims are required")
 
     rows = payload.get("rows", [])
-    if len(rows) != 3:
-        failures.append("expected exactly three provider matrix rows")
+    if len(rows) != 6:
+        failures.append("expected exactly six provider matrix rows")
         return failures
 
-    by_model = {row.get("model"): row for row in rows}
+    by_key = {(row.get("model"), row.get("decoding_mode")): row for row in rows}
     expected_models = {"gpt-5-3-chat", "gpt-4-1-nano", "gpt-5-nano"}
-    if set(by_model) != expected_models:
+    expected_modes = {"json_mode", "tool_call"}
+    if {row.get("model") for row in rows} != expected_models:
         failures.append(f"models must be {sorted(expected_models)}")
+    if {row.get("decoding_mode") for row in rows} != expected_modes:
+        failures.append(f"decoding modes must be {sorted(expected_modes)}")
+    if set(by_key) != {(model, mode) for model in expected_models for mode in expected_modes}:
+        failures.append("matrix must include every expected model/mode pair")
 
     for row in rows:
         if row.get("case_runs") != 7 or row.get("traceable_case_rows") != 7:
@@ -80,23 +85,27 @@ def validate_summary(payload: dict[str, Any]) -> list[str]:
             failures.append(f"{row.get('model')} trace_errors must be 0")
 
     for model in ("gpt-5-3-chat", "gpt-4-1-nano"):
-        row = by_model.get(model, {})
-        if row.get("gate_status") != "PASS":
-            failures.append(f"{model} gate_status must be PASS")
-        for metric in ("schema_valid_rate", "semantic_correct_rate", "clean_json_rate", "valid_json_rate"):
-            if row.get(metric) != 1.0:
-                failures.append(f"{model} {metric} must be 1.0")
+        for mode in expected_modes:
+            row = by_key.get((model, mode), {})
+            label = f"{model}/{mode}"
+            if row.get("gate_status") != "PASS":
+                failures.append(f"{label} gate_status must be PASS")
+            for metric in ("schema_valid_rate", "semantic_correct_rate", "clean_json_rate", "valid_json_rate"):
+                if row.get(metric) != 1.0:
+                    failures.append(f"{label} {metric} must be 1.0")
 
-    fail_row = by_model.get("gpt-5-nano", {})
-    if fail_row.get("gate_status") != "FAIL":
-        failures.append("gpt-5-nano gate_status must be FAIL")
-    if fail_row.get("primary_failure_mode") != "format_schema_failure":
-        failures.append("gpt-5-nano primary_failure_mode must be format_schema_failure")
-    if fail_row.get("top_failures") != "invalid_json:7":
-        failures.append("gpt-5-nano top_failures must be invalid_json:7")
-    for metric in ("schema_valid_rate", "semantic_correct_rate", "clean_json_rate", "valid_json_rate"):
-        if fail_row.get(metric) != 0.0:
-            failures.append(f"gpt-5-nano {metric} must be 0.0")
+    for mode in expected_modes:
+        fail_row = by_key.get(("gpt-5-nano", mode), {})
+        label = f"gpt-5-nano/{mode}"
+        if fail_row.get("gate_status") != "FAIL":
+            failures.append(f"{label} gate_status must be FAIL")
+        if fail_row.get("primary_failure_mode") != "format_schema_failure":
+            failures.append(f"{label} primary_failure_mode must be format_schema_failure")
+        if fail_row.get("top_failures") != "invalid_json:7":
+            failures.append(f"{label} top_failures must be invalid_json:7")
+        for metric in ("schema_valid_rate", "semantic_correct_rate", "clean_json_rate", "valid_json_rate"):
+            if fail_row.get(metric) != 0.0:
+                failures.append(f"{label} {metric} must be 0.0")
     return failures
 
 

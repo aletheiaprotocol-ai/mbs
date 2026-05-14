@@ -989,11 +989,16 @@ def test_mbs_lang_provider_summary_preserves_provider_boundary():
     assert failures == []
     assert payload["classification_label"] == "real_provider_mbs_lang_behavior_evidence"
     assert payload["raw_provider_outputs_public"] is False
+    assert len(payload["rows"]) == 6
     assert {row["model"] for row in payload["rows"]} == {"gpt-5-3-chat", "gpt-4-1-nano", "gpt-5-nano"}
+    assert {row["decoding_mode"] for row in payload["rows"]} == {"json_mode", "tool_call"}
     assert {row["gate_status"] for row in payload["rows"]} == {"PASS", "FAIL"}
     assert all(row["case_runs"] == 7 and row["traceable_case_rows"] == 7 for row in payload["rows"])
     assert all(row["languages"] == ["ar", "de", "en", "es", "fr", "hu", "tr"] for row in payload["rows"])
-    assert [row for row in payload["rows"] if row["model"] == "gpt-5-nano"][0]["top_failures"] == "invalid_json:7"
+    nano_rows = [row for row in payload["rows"] if row["model"] == "gpt-5-nano"]
+    assert len(nano_rows) == 2
+    assert all(row["top_failures"] == "invalid_json:7" for row in nano_rows)
+    assert all(row["infra_failed_rows"] == 0 for row in nano_rows)
 
 
 def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
