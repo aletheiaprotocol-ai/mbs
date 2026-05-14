@@ -100,6 +100,7 @@ mbs adapt-responses --schema examples/tool_argument_generation/schema.json --cas
 python scripts/run_nested_tool_fixture_pack.py --out-dir results/nested_tool_fixture_pack
 python scripts/run_nested_retry_matrix.py --out-dir results/nested_retry_matrix_fixture
 python scripts/run_mbs_lang_matrix.py --out-dir results/mbs_lang_matrix_fixture
+python scripts/run_lang_provider_evidence.py --responses examples/multilingual_risk_review/provider_json_mode_good.jsonl --model fixture-lang-provider --classification fixture --mode json_mode --out-dir results/mbs_lang_provider_evidence
 python scripts/run_nested_provider_evidence.py --responses results/provider_nested_tool_call.responses.jsonl --model provider-or-oss-model-id --classification provider --mode tool_call --out-dir results/nested_provider_evidence
 python scripts/build_nested_provider_evidence.py --responses results/provider_nested_tool_call.responses.jsonl --model provider-or-oss-model-id --decoding-mode tool_call --classification provider --gate-config benchmarks/provider_gate.example.yaml --out-dir results/nested_provider_evidence
 python scripts/assert_ci_artifacts.py --results-dir benchmarks/results
@@ -112,6 +113,7 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 - Archived Azure matrix case snapshot: `examples/nested_tool_arguments/cases_8_may2026.jsonl`
 - Hard nested retry/repair matrix fixture: `scripts/run_nested_retry_matrix.py`
 - MBS-Lang token-fairness fixture matrix: `scripts/run_mbs_lang_matrix.py`
+- MBS-Lang provider/OSS/HPC evidence runner: `scripts/run_lang_provider_evidence.py`
 - Hard nested provider/OSS evidence builder: `scripts/build_nested_provider_evidence.py`
 - One-command hard nested provider/OSS runner: `scripts/run_nested_provider_evidence.py`
 - CI artifact completeness gate: `scripts/assert_ci_artifacts.py`
@@ -124,6 +126,7 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 - `docs/mbs_public_benchmark_report.md`
 - `docs/mbs_evidence_pack.md`
 - `docs/mbs_lang.md`
+- `docs/mbs_lang_provider_evidence.md`
 - `docs/mbs_model_behavior_guidance.md`
 - `docs/mbs_agent_tools.md`
 - `docs/mbs_provider_recipes.md`

@@ -43,7 +43,7 @@ def adapt_response_jsonl(
     row order. Response rows override case metadata.
     """
     schema = load_schema(schema_path)
-    contract = compile_schema(
+    default_contract = compile_schema(
         schema,
         format=prompt_style,
         input_language=input_language,
@@ -61,9 +61,30 @@ def adapt_response_jsonl(
         row_model = str(merged.get("model") or model or "provider-response")
         row_prompt_style = str(merged.get("prompt_style") or prompt_style)
         row_decoding_mode = str(merged.get("decoding_mode") or decoding_mode)
+        row_input_language = merged.get("input_language") or input_language
+        row_output_language = merged.get("output_language") or output_language
+        row_contract_language = merged.get("contract_language") or contract_language
         row_language = str(
             merged.get("language")
-            or language_label(input_language=input_language, output_language=output_language, contract_language=contract_language)
+            or language_label(
+                input_language=row_input_language,
+                output_language=row_output_language,
+                contract_language=row_contract_language,
+            )
+        )
+        contract = (
+            default_contract
+            if row_input_language == input_language
+            and row_output_language == output_language
+            and row_contract_language == contract_language
+            and row_prompt_style == prompt_style
+            else compile_schema(
+                schema,
+                format=row_prompt_style,
+                input_language=row_input_language,
+                output_language=row_output_language,
+                contract_language=row_contract_language,
+            )
         )
         provider_error = _provider_error(merged)
         raw_output = _extract_output(merged)
@@ -96,6 +117,9 @@ def adapt_response_jsonl(
                 "prompt_style": row_prompt_style,
                 "decoding_mode": row_decoding_mode,
                 "language": row_language,
+                "input_language": row_input_language,
+                "output_language": row_output_language,
+                "contract_language": row_contract_language,
                 "status": validation["status"],
                 "json_valid": validation["json_valid"],
                 "schema_valid": validation["schema_valid"],

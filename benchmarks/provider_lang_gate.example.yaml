@@ -1,0 +1,19 @@
+# Example threshold gate for real multilingual provider or OSS model results.
+# Copy and tune this file for application risk. The default multilingual risk
+# fixture has seven rows, so coverage requirements differ from the hard nested
+# provider gate.
+thresholds:
+  require_rows: true
+  require_traces: true
+  min_rows: 1
+  min_behavior_rows: 1
+  min_traceable_case_rows: 7
+  min_total_runs: 7
+  min_models: 1
+  min_schemas: 1
+  min_schema_valid_rate: 0.90
+  min_semantic_correct_rate: 0.80
+  min_clean_json_rate: 0.90
+  max_missing_trace_rows: 0
+  max_uncheckable_result_rows: 0
+  max_infra_failed_rows: 0

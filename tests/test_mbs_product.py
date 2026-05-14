@@ -887,6 +887,93 @@ def test_mbs_lang_matrix_reports_token_fairness_and_boundaries(tmp_path, monkeyp
     assert (tmp_path / "mbs_lang_matrix.md").exists()
 
 
+def test_mbs_lang_provider_fixture_builds_classified_evidence(tmp_path, monkeypatch, capsys):
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "build_lang_provider_evidence.py"
+    spec = importlib.util.spec_from_file_location("build_lang_provider_evidence", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "build_lang_provider_evidence.py",
+            "--root",
+            str(root),
+            "--responses",
+            str(root / "examples" / "multilingual_risk_review" / "provider_json_mode_good.jsonl"),
+            "--out-dir",
+            str(tmp_path),
+            "--model",
+            "fixture-lang-provider",
+            "--decoding-mode",
+            "json_mode",
+            "--classification",
+            "fixture",
+            "--json",
+        ],
+    )
+
+    assert module.main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    result = json.loads((tmp_path / "mbs_lang_provider.mbs.json").read_text(encoding="utf-8"))
+    pack_manifest = json.loads((tmp_path / "evidence_pack" / "manifest.json").read_text(encoding="utf-8"))
+
+    assert payload["status"] == "PASS"
+    assert payload["classification_label"] == "fixture_mbs_lang_not_provider_benchmark"
+    assert payload["checks"]["languages"] == ["ar", "de", "en", "es", "fr", "hu", "tr"]
+    assert payload["checks"]["gate_status"] == "PASS"
+    assert payload["checks"]["input_language_rows_present"] is True
+    assert payload["checks"]["contract_language_en"] is True
+    assert result["summary"]["schema_valid_rate"] == 1.0
+    assert result["summary"]["semantic_correct_rate"] == 1.0
+    assert {row["input_language"] for row in result["rows"]} == {"ar", "de", "en", "es", "fr", "hu", "tr"}
+    assert pack_manifest["classification"] == "fixture_smoke_not_provider_benchmark"
+
+
+def test_mbs_lang_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "run_lang_provider_evidence.py"
+    spec = importlib.util.spec_from_file_location("run_lang_provider_evidence", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_lang_provider_evidence.py",
+            "--root",
+            str(root),
+            "--out-dir",
+            str(tmp_path),
+            "--model",
+            "provider-model",
+            "--provider",
+            "openai-compatible",
+            "--endpoint",
+            "http://127.0.0.1:8000",
+            "--mode",
+            "json_mode",
+            "--classification",
+            "oss",
+            "--dry-run",
+            "--json",
+        ],
+    )
+
+    assert module.main() == 0
+    plan = json.loads((tmp_path / "run_plan.json").read_text(encoding="utf-8"))
+
+    assert plan["classification"] == "oss"
+    assert plan["collected_responses"] is True
+    assert len(plan["commands"]) == 2
+    assert "collect_azure_openai_responses.py" in plan["commands"][0][1]
+    assert "build_lang_provider_evidence.py" in plan["commands"][1][1]
+    assert str(root / "examples" / "multilingual_risk_review" / "cases.jsonl") in plan["commands"][0]
+
+
 def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     script_path = root / "scripts" / "run_nested_provider_evidence.py"

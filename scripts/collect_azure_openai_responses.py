@@ -99,7 +99,9 @@ def load_jsonl(path: str) -> list[dict[str, Any]]:
 def build_request(schema: dict[str, Any], case: dict[str, Any], mode: str, max_tokens: int, seed: int) -> dict[str, Any]:
     system = "Return only the requested structured output. Do not include explanation outside JSON."
     user = (
-        "Choose the correct structured tool-routing output for this case.\n"
+        "Return the correct structured output for this case. Preserve schema keys and enum values exactly.\n"
+        f"Input language: {case.get('input_language', 'default')}\n"
+        f"Output language for free-text fields: {case.get('output_language', 'default')}\n"
         f"Schema: {json.dumps(schema, ensure_ascii=False)}\n"
         f"Case: {case.get('input', '')}"
     )
@@ -115,13 +117,13 @@ def build_request(schema: dict[str, Any], case: dict[str, Any], mode: str, max_t
             {
                 "type": "function",
                 "function": {
-                    "name": "route_support_tool",
-                    "description": "Return the structured support-routing tool decision.",
+                    "name": "mbs_structured_output",
+                    "description": "Return the requested structured output.",
                     "parameters": schema,
                 },
             }
         ]
-        body["tool_choice"] = {"type": "function", "function": {"name": "route_support_tool"}}
+        body["tool_choice"] = {"type": "function", "function": {"name": "mbs_structured_output"}}
     return body
 
 
@@ -177,6 +179,9 @@ def row_from_response(case: dict[str, Any], response: dict[str, Any], mode: str,
         "latency_s": latency_s,
         "tokens": {"output": usage.get("completion_tokens", 0)},
         "finish_reason": response.get("choices", [{}])[0].get("finish_reason"),
+        "input_language": case.get("input_language"),
+        "output_language": case.get("output_language"),
+        "contract_language": case.get("contract_language", "en") if case.get("input_language") or case.get("output_language") else None,
     }
     if mode == "tool_call":
         tool_calls = message.get("tool_calls") or []

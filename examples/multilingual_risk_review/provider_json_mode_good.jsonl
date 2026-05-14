@@ -1,0 +1,7 @@
+{"case_id":"ml_en_high_001","output":{"decision":"REVIEW","risk_level":"HIGH","reason":"New beneficiary and unusual-country password reset require review."},"model":"lang-fixture-provider","decoding_mode":"json_mode","tokens":{"output":16}}
+{"case_id":"ml_ar_001","output":{"decision":"REVIEW","risk_level":"HIGH","reason":"New beneficiary after password change from unusual country requires review."},"model":"lang-fixture-provider","decoding_mode":"json_mode","tokens":{"output":15}}
+{"case_id":"ml_tr_001","output":{"decision":"APPROVE","risk_level":"LOW","reason":"Recurring utility bill with low amount."},"model":"lang-fixture-provider","decoding_mode":"json_mode","tokens":{"output":11}}
+{"case_id":"ml_hu_001","output":{"decision":"REVIEW","risk_level":"HIGH","reason":"Large transfer to a new beneficiary with unusual login country."},"model":"lang-fixture-provider","decoding_mode":"json_mode","tokens":{"output":14}}
+{"case_id":"ml_de_001","output":{"decision":"APPROVE","risk_level":"LOW","reason":"Recurring phone bill with low amount."},"model":"lang-fixture-provider","decoding_mode":"json_mode","tokens":{"output":10}}
+{"case_id":"ml_fr_001","output":{"decision":"REVIEW","risk_level":"HIGH","reason":"Large transfer to a new beneficiary after login alert."},"model":"lang-fixture-provider","decoding_mode":"json_mode","tokens":{"output":13}}
+{"case_id":"ml_es_001","output":{"decision":"APPROVE","risk_level":"LOW","reason":"Recurring water bill with low amount."},"model":"lang-fixture-provider","decoding_mode":"json_mode","tokens":{"output":10}}
