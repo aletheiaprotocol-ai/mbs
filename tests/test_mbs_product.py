@@ -822,6 +822,41 @@ def test_nested_tool_suite_expanded_to_twenty_five_cases():
     }
 
 
+def test_nested_retry_matrix_reports_repair_policies(tmp_path, monkeypatch, capsys):
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "run_nested_retry_matrix.py"
+    spec = importlib.util.spec_from_file_location("run_nested_retry_matrix", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["run_nested_retry_matrix.py", "--root", str(root), "--out-dir", str(tmp_path), "--json"],
+    )
+
+    assert module.main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    matrix = json.loads((tmp_path / "retry_matrix_summary.json").read_text(encoding="utf-8"))
+    audit = json.loads((tmp_path / "retry_audit.json").read_text(encoding="utf-8"))
+
+    assert payload["status"] == "PASS"
+    assert payload["classification"] == "fixture_retry_matrix_not_provider_benchmark"
+    assert payload["checks"]["case_count"] == 25
+    assert payload["checks"]["no_retry_schema_valid_rate"] == 0.68
+    assert payload["checks"]["no_retry_semantic_correct_rate"] == 0.16
+    assert payload["checks"]["format_retry_schema_valid_rate"] == 1.0
+    assert payload["checks"]["semantic_retry_semantic_correct_rate"] == 0.8
+    assert payload["checks"]["best_of_schema_valid_rate"] == 1.0
+    assert payload["checks"]["best_of_semantic_correct_rate"] == 1.0
+    assert payload["checks"]["selected_attempt_regressions"] == 0
+    assert payload["checks"]["improved_rows"] > 0
+    assert matrix["evidence_boundary"].startswith("Deterministic fixture retry matrix")
+    assert audit["status"] == "PASS"
+    assert (tmp_path / "report.md").exists()
+    assert (tmp_path / "triage.json").exists()
+
+
 def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     script_path = root / "scripts" / "run_nested_provider_evidence.py"
