@@ -782,6 +782,26 @@ def test_provider_matrix_summary_preserves_failed_gate_evidence():
     }
 
 
+def test_oss_hpc_dry_run_record_makes_no_evidence_claim():
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "assert_oss_hpc_dry_run_record.py"
+    spec = importlib.util.spec_from_file_location("assert_oss_hpc_dry_run_record", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    record_path = root / "docs" / "oss_hpc_endpoint_dry_run_20260514" / "endpoint_dry_run.json"
+    result = module.validate_record(record_path)
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+
+    assert result == {"status": "PASS", "failures": [], "checked_urls": 3}
+    assert record["status"] == "NO_EVIDENCE_DRY_RUN"
+    assert record["endpoint_probe"]["reachable_endpoints"] == []
+    assert record["evidence_boundary"]["raw_responses_collected"] is False
+    assert record["evidence_boundary"]["evidence_pack_created"] is False
+    assert record["evidence_boundary"]["aggregate_matrix_row_created"] is False
+
+
 def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     script_path = root / "scripts" / "run_nested_provider_evidence.py"

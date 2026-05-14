@@ -1,0 +1,51 @@
+{
+  "record_id": "oss_hpc_endpoint_dry_run_20260514",
+  "generated_at": "2026-05-14",
+  "classification": "oss",
+  "status": "NO_EVIDENCE_DRY_RUN",
+  "suite": "hard_nested_tool_arguments",
+  "schema": "examples/nested_tool_arguments/schema.json",
+  "cases": "examples/nested_tool_arguments/cases.jsonl",
+  "case_count": 8,
+  "runner": "scripts/run_nested_provider_evidence.py",
+  "gate_config": "benchmarks/provider_gate.example.yaml",
+  "endpoint_probe": {
+    "checked_urls": [
+      "http://127.0.0.1:8000/v1/models",
+      "http://127.0.0.1:1234/v1/models",
+      "http://127.0.0.1:11434/v1/models"
+    ],
+    "reachable_endpoints": [],
+    "probe_result": "No common local OpenAI-compatible endpoint was reachable from the Windows workstation during this check."
+  },
+  "dry_run_plan": {
+    "provider": "openai-compatible",
+    "endpoint": "http://127.0.0.1:8000",
+    "model": "local-oss-openai-compatible-placeholder",
+    "mode": "tool_call",
+    "classification": "oss",
+    "out_dir": "results/nested_oss_evidence_dry_run_20260514",
+    "would_collect_responses": true,
+    "would_build_evidence_pack": true
+  },
+  "evidence_boundary": {
+    "raw_responses_collected": false,
+    "evidence_pack_created": false,
+    "aggregate_matrix_row_created": false,
+    "claim": "No OSS/HPC model-behavior evidence is claimed by this record. This is only a setup and endpoint-readiness record."
+  },
+  "required_for_real_evidence": [
+    "A reachable OpenAI-compatible endpoint exposing /v1/models and /v1/chat/completions or equivalent chat endpoint.",
+    "A real model id served by that endpoint.",
+    "Run scripts/run_nested_provider_evidence.py with --classification oss or --classification hpc and without --dry-run.",
+    "Store raw responses under ignored results/ until sanitized release review.",
+    "Publish only aggregate sanitized summary rows unless raw responses are intentionally scrubbed and approved."
+  ],
+  "non_claims": [
+    "This record is not an OSS benchmark.",
+    "This record is not an HPC benchmark.",
+    "This record does not compare OSS/HPC behavior to Azure behavior.",
+    "This record does not contain raw model outputs.",
+    "This record does not satisfy provider_gate.example.yaml."
+  ]
+}

@@ -238,6 +238,10 @@ python scripts/run_nested_provider_evidence.py \
   --out-dir results/nested_oss_evidence
 ```
 
+If no endpoint is reachable, do **not** publish an OSS/HPC evidence claim. Record
+only a no-evidence dry run like `docs/oss_hpc_endpoint_dry_run_20260514/`, then
+rerun the command without `--dry-run` once a real endpoint is available.
+
 Common local endpoint defaults:
 
 - vLLM OpenAI server: `--endpoint http://127.0.0.1:8000`;
