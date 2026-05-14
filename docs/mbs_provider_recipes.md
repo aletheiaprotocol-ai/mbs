@@ -151,7 +151,36 @@ The script writes good/bad adapted results, evidence packs, a combined report,
 combined triage, and a manifest. It remains fixture evidence, not provider
 benchmark evidence.
 
-## 4. Compare Text vs JSON Mode vs Tool Calls
+## 4. Hard Nested Provider / OSS Evidence Pack
+
+After collecting real model JSONL against `examples/nested_tool_arguments/`, use
+the classified builder. Only use `provider`, `oss`, or `hpc` classification when
+the response JSONL came from that real model environment.
+
+```bash
+python scripts/build_nested_provider_evidence.py \
+  --responses results/provider_nested_tool_call.responses.jsonl \
+  --model provider-or-oss-model-id \
+  --decoding-mode tool_call \
+  --classification provider \
+  --gate-config benchmarks/provider_gate.example.yaml \
+  --out-dir results/nested_provider_evidence
+```
+
+For local examples or CI smoke checks, keep `--classification fixture` and use
+`benchmarks/fixture_smoke_gate.yaml`. The output includes:
+
+- `nested_provider.mbs.json` adapted result rows;
+- `report.md` scorecards;
+- `gate.json` threshold result;
+- `triage.json` failure examples;
+- `evidence_pack/` with manifest, README, report, gate, triage, and copied raw result.
+
+Provider/OSS/HPC evidence is still scoped evidence: it proves behavior only for
+the listed nested schema, cases, model/deployment, decoding mode, prompt style,
+gate, and run settings.
+
+## 5. Compare Text vs JSON Mode vs Tool Calls
 
 After adapting each mode, compare controlled runs. Keep one variable different
 at a time.
@@ -174,7 +203,7 @@ If you reuse the same `--model` value for all modes, you may match on
 `schema,model,language`. If no rows match, MBS returns `NO_MATCH` instead of
 pretending the comparison passed.
 
-## 5. Provider Gate Checklist
+## 6. Provider Gate Checklist
 
 Before calling a run provider evidence, verify:
 
@@ -187,7 +216,7 @@ Before calling a run provider evidence, verify:
 7. `mbs triage` exports concrete failure examples;
 8. `mbs evidence-pack --classification provider --copy-results` produces the review bundle.
 
-## 6. CI Pattern For Real Provider Outputs
+## 7. CI Pattern For Real Provider Outputs
 
 Do not put provider keys in this repo. Collect provider JSONL in your own secure
 job, then run MBS on the saved response file:

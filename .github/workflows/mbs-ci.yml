@@ -44,6 +44,9 @@ jobs:
       - name: Build hard nested tool-call fixture evidence packs
         run: python scripts/run_nested_tool_fixture_pack.py --out-dir benchmarks/results/nested_tool_fixture_pack
 
+      - name: Assert reviewable CI artifact completeness
+        run: python scripts/assert_ci_artifacts.py --results-dir benchmarks/results
+
       - name: Upload MBS CI artifacts
         uses: actions/upload-artifact@v4
         if: always()

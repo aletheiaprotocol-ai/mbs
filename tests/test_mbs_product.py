@@ -1,5 +1,6 @@
 import json
 import importlib.util
+import sys
 from pathlib import Path
 
 from mbs import call_agent_tool, check, handle_agent_tool_request, list_agent_tools, report_cost, validate_output
@@ -509,7 +510,94 @@ def test_nested_tool_fixture_pack_script_writes_evidence_packs(tmp_path, monkeyp
     assert manifest["checks"]["semantic_mismatch_present"] is True
     assert (tmp_path / "evidence_pack_good" / "manifest.json").exists()
     assert (tmp_path / "evidence_pack_bad" / "triage.json").exists()
-    assert (tmp_path / "combined_report.md").exists()
+    assert (tmp_path / "evidence_pack_bad" / "report.md").exists()
+    assert (tmp_path / "evidence_pack_good" / "report.md").exists()
+
+
+def test_nested_provider_evidence_script_classifies_fixture_pack(tmp_path):
+    script = Path("scripts/build_nested_provider_evidence.py")
+    spec = importlib.util.spec_from_file_location("build_nested_provider_evidence", script)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+
+    out_dir = tmp_path / "nested_provider_pack"
+    old_argv = sys.argv
+    try:
+        sys.argv = [
+            str(script),
+            "--responses",
+            "examples/nested_tool_arguments/provider_tool_call_good.jsonl",
+            "--out-dir",
+            str(out_dir),
+            "--model",
+            "fixture-nested-tool-provider",
+            "--decoding-mode",
+            "tool_call",
+            "--classification",
+            "fixture",
+            "--json",
+        ]
+        assert module.main() == 0
+    finally:
+        sys.argv = old_argv
+
+    manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+    pack_manifest = json.loads((out_dir / "evidence_pack" / "manifest.json").read_text(encoding="utf-8"))
+
+    assert manifest["status"] == "PASS"
+    assert manifest["classification_label"] == "fixture_smoke_not_provider_benchmark"
+    assert manifest["checks"]["gate_status"] == "PASS"
+    assert manifest["checks"]["trace_errors"] == []
+    assert pack_manifest["classification"] == "fixture_smoke_not_provider_benchmark"
+    assert (out_dir / "nested_provider.mbs.json").exists()
+    assert (out_dir / "report.md").exists()
+    assert (out_dir / "gate.json").exists()
+    assert (out_dir / "triage.json").exists()
+    assert (out_dir / "evidence_pack" / "raw_results" / "nested_provider.mbs.json").exists()
+
+
+def test_ci_artifact_checker_accepts_complete_fixture_outputs(tmp_path, monkeypatch):
+    root = Path(__file__).resolve().parents[1]
+    results_dir = tmp_path / "benchmarks" / "results"
+    results_dir.mkdir(parents=True)
+    ci_result = results_dir / "ci_bench.json"
+    ci_result.write_text(
+        json.dumps(
+            {
+                "schema": "schema.json",
+                "model": "mock",
+                "summary": {"runs": 1, "schema_valid_rate": 1.0, "semantic_correct_rate": 1.0, "clean_json_rate": 1.0},
+                "rows": [{"status": "PASS", "trace": {"trace_id": "mbs_trace_ok", "tokens": {"output": 3}}}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    gate_path = tmp_path / "gate.yaml"
+    gate_path.write_text("thresholds:\n  min_schema_valid_rate: 1.0\n", encoding="utf-8")
+    build_evidence_pack([ci_result], results_dir / "evidence_pack_ci", classification="ci", gate_config=gate_path, copy_results=True)
+    (results_dir / "ci_report.md").write_text("# report\n", encoding="utf-8")
+    (results_dir / "ci_gate.json").write_text(json.dumps({"status": "PASS"}), encoding="utf-8")
+
+    nested_script_path = root / "scripts" / "run_nested_tool_fixture_pack.py"
+    nested_spec = importlib.util.spec_from_file_location("run_nested_tool_fixture_pack_for_ci_check", nested_script_path)
+    assert nested_spec and nested_spec.loader
+    nested_module = importlib.util.module_from_spec(nested_spec)
+    nested_spec.loader.exec_module(nested_module)
+    monkeypatch.setattr(
+        "sys.argv",
+        ["run_nested_tool_fixture_pack.py", "--root", str(root), "--out-dir", str(results_dir / "nested_tool_fixture_pack")],
+    )
+    assert nested_module.main() == 0
+
+    checker_path = root / "scripts" / "assert_ci_artifacts.py"
+    checker_spec = importlib.util.spec_from_file_location("assert_ci_artifacts", checker_path)
+    assert checker_spec and checker_spec.loader
+    checker = importlib.util.module_from_spec(checker_spec)
+    checker_spec.loader.exec_module(checker)
+    monkeypatch.setattr("sys.argv", ["assert_ci_artifacts.py", "--results-dir", str(results_dir), "--json"])
+
+    assert checker.main() == 0
 
 
 def test_make_response_template_cli_and_api(tmp_path, capsys):

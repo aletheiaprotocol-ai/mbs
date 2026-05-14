@@ -14,7 +14,9 @@ The default CI gate proves software and integration health:
 - benchmark JSON is produced;
 - report generation succeeds;
 - case rows have trace ids;
-- CI artifacts are downloadable.
+- CI artifacts are downloadable;
+- hard nested tool-call fixture packs are generated;
+- artifact manifests preserve evidence boundaries.
 
 It does **not** prove broad model reliability. Real-model evidence still needs
 provider/OSS response files, repeated cases, trace coverage, failure examples,
@@ -34,14 +36,22 @@ mbs bench --config benchmarks/models.yaml --out benchmarks/results/ci_bench.json
 mbs report --results benchmarks/results/ci_bench.json --exclude-infra --require-traces --summary-only --out benchmarks/results/ci_report.md
 mbs gate --results benchmarks/results/ci_bench.json --config benchmarks/ci_gate.yaml --out benchmarks/results/ci_gate.json
 mbs evidence-pack --results benchmarks/results/ci_bench.json --gate-config benchmarks/ci_gate.yaml --classification ci --copy-results --out-dir benchmarks/results/evidence_pack_ci
+python scripts/run_nested_tool_fixture_pack.py --out-dir benchmarks/results/nested_tool_fixture_pack
+python scripts/assert_ci_artifacts.py --results-dir benchmarks/results
 ```
 
 The `.[test]` extra installs the test runner used by CI. A clean GitHub runner
 does not inherit local development packages.
 
-The workflow uploads `benchmarks/results/evidence_pack_ci/` as a downloadable
-artifact. That directory includes a reviewer-friendly `README.md`, a
-machine-readable `manifest.json`, report, gate, triage, and copied raw results.
+The workflow uploads one downloadable artifact bundle with:
+
+- `benchmarks/results/evidence_pack_ci/` — reviewer-friendly CI evidence pack;
+- `benchmarks/results/nested_tool_fixture_pack/` — hard nested tool-call fixture
+  pack with good/bad adapted results, good/bad evidence packs, combined report,
+  triage, and manifest.
+
+`scripts/assert_ci_artifacts.py` fails CI if required files are missing or if the
+manifest classifications drift from `ci`/`fixture` evidence boundaries.
 
 ## Recommended Pull Request Rule
 
@@ -51,7 +61,8 @@ Block merge if any of these fail:
 2. `mbs bench` does not produce result JSON.
 3. `mbs report --require-traces` exits nonzero.
 4. `mbs gate` misses configured thresholds.
-5. CI artifacts are missing.
+5. Nested fixture evidence pack generation fails.
+6. CI artifact completeness or manifest-boundary assertions fail.
 
 ## Threshold Config
 
