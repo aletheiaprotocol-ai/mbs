@@ -486,6 +486,32 @@ def test_adapter_fixture_gate_script_writes_manifest(tmp_path, monkeypatch, caps
     assert (tmp_path / "report_summary.md").exists()
 
 
+def test_nested_tool_fixture_pack_script_writes_evidence_packs(tmp_path, monkeypatch, capsys):
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "run_nested_tool_fixture_pack.py"
+    spec = importlib.util.spec_from_file_location("run_nested_tool_fixture_pack", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["run_nested_tool_fixture_pack.py", "--root", str(root), "--out-dir", str(tmp_path), "--json"],
+    )
+
+    assert module.main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    manifest = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
+
+    assert payload["status"] == "PASS"
+    assert manifest["classification"] == "fixture_smoke_not_provider_benchmark"
+    assert manifest["checks"]["nested_schema_error_present"] is True
+    assert manifest["checks"]["semantic_mismatch_present"] is True
+    assert (tmp_path / "evidence_pack_good" / "manifest.json").exists()
+    assert (tmp_path / "evidence_pack_bad" / "triage.json").exists()
+    assert (tmp_path / "combined_report.md").exists()
+
+
 def test_make_response_template_cli_and_api(tmp_path, capsys):
     cases_path = tmp_path / "cases.jsonl"
     out_path = tmp_path / "template.jsonl"

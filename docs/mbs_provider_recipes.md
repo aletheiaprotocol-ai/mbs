@@ -141,6 +141,16 @@ wrong nested boolean, missing nested array key, wrong nested amount type, and a
 valid-schema-but-wrong tool choice so reports separate schema failures from
 semantic mismatch.
 
+To generate reviewable fixture artifacts for that hard example:
+
+```bash
+python scripts/run_nested_tool_fixture_pack.py --out-dir results/nested_tool_fixture_pack
+```
+
+The script writes good/bad adapted results, evidence packs, a combined report,
+combined triage, and a manifest. It remains fixture evidence, not provider
+benchmark evidence.
+
 ## 4. Compare Text vs JSON Mode vs Tool Calls
 
 After adapting each mode, compare controlled runs. Keep one variable different
