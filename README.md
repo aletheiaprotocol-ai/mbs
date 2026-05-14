@@ -93,6 +93,7 @@ mbs validate --schema examples/fintech_transaction_risk/schema.json --output exa
 mbs check --schema examples/fintech_transaction_risk/schema.json --input "Customer transfers 4800 EUR to a new beneficiary" --model mock
 mbs bench --config benchmarks/models.yaml
 mbs report --results benchmarks/results/*.json --exclude-infra --require-traces --summary-only
+mbs evidence-pack --results benchmarks/results/ci_bench.json --gate-config benchmarks/ci_gate.yaml --classification ci --out-dir benchmarks/results/evidence_pack_ci
 mbs agent-tools --list
 mbs make-response-template --cases examples/tool_argument_generation/cases.jsonl --out provider_responses.template.jsonl --output-field tool_call
 mbs adapt-responses --schema examples/tool_argument_generation/schema.json --responses provider_responses.jsonl --out provider_responses.mbs.json
@@ -107,6 +108,7 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 - `docs/mbs_quickstart.md`
 - `docs/mbs_bench.md`
 - `docs/mbs_public_benchmark_report.md`
+- `docs/mbs_evidence_pack.md`
 - `docs/mbs_lang.md`
 - `docs/mbs_model_behavior_guidance.md`
 - `docs/mbs_agent_tools.md`

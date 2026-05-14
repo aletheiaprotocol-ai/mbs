@@ -66,6 +66,18 @@ For repository regression testing, use the copy/paste CI workflow in
 Use `mbs triage --max-failure-examples N --out triage.json` to export concrete
 failed case ids, trace ids, failure types, and first validation details.
 
+Use `mbs evidence-pack` to bundle report, gate, triage, manifest, and optional
+raw result JSON into a reviewable directory:
+
+```bash
+mbs evidence-pack \
+  --results benchmarks/results/ci_bench.json \
+  --gate-config benchmarks/ci_gate.yaml \
+  --classification ci \
+  --copy-results \
+  --out-dir benchmarks/results/evidence_pack_ci
+```
+
 Use `benchmarks/local_fintech_baselines.yaml` to compare the starter prompt styles:
 
 ```bash

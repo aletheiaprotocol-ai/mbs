@@ -16,6 +16,7 @@ from .compare import compare_results, format_compare, write_compare_json
 from .compiler import canonical_json, compile_schema, estimate_tokens, format_report, load_schema
 from .cost import report_cost
 from .demo import build_demo, format_demo, run_sample_benchmark, write_demo_artifacts
+from .evidence import build_evidence_pack
 from .gate import evaluate_gate, format_gate, load_gate_config, write_gate_json
 from .lang import compile_language_contract
 from .models import load_model_registry, suite_models, suite_summary, validate_suite_coverage, write_model_ids
@@ -112,6 +113,22 @@ def main(argv: list[str] | None = None) -> int:
     p_gate.add_argument("--out", help="Write gate result JSON")
     p_gate.add_argument("--exclude-infra", action="store_true", help="Exclude infrastructure-failed rows before threshold checks")
     p_gate.add_argument("--json", action="store_true")
+
+    p_evidence = sub.add_parser("evidence-pack", help="Build a reviewable MBS evidence artifact directory")
+    p_evidence.add_argument("--results", nargs="+", required=True, help="Result JSON files, directories, or glob patterns")
+    p_evidence.add_argument("--out-dir", required=True, help="Directory to write evidence pack artifacts")
+    p_evidence.add_argument(
+        "--classification",
+        choices=["demo", "ci", "fixture", "provider", "oss", "hpc"],
+        default="ci",
+        help="Evidence boundary classification",
+    )
+    p_evidence.add_argument("--gate-config", help="Optional gate config to include threshold evidence")
+    p_evidence.add_argument("--exclude-infra", action="store_true")
+    p_evidence.add_argument("--allow-missing-traces", action="store_true")
+    p_evidence.add_argument("--copy-results", action="store_true", help="Copy raw result JSON files into the pack")
+    p_evidence.add_argument("--title", default="MBS Evidence Pack")
+    p_evidence.add_argument("--json", action="store_true")
 
     p_compare = sub.add_parser("compare", help="Compare current MBS results against a baseline")
     p_compare.add_argument("--baseline", nargs="+", required=True, help="Baseline result JSON files or globs")
@@ -210,6 +227,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_report(args)
     if args.command == "gate":
         return _cmd_gate(args)
+    if args.command == "evidence-pack":
+        return _cmd_evidence_pack(args)
     if args.command == "compare":
         return _cmd_compare(args)
     if args.command == "retry-audit":
@@ -430,6 +449,31 @@ def _cmd_gate(args: argparse.Namespace) -> int:
     if args.out:
         write_gate_json(args.out, result)
     return 0 if result["status"] == "PASS" else 2
+
+
+def _cmd_evidence_pack(args: argparse.Namespace) -> int:
+    manifest = build_evidence_pack(
+        args.results,
+        args.out_dir,
+        classification=args.classification,
+        gate_config=args.gate_config,
+        exclude_infra=args.exclude_infra,
+        require_traces=not args.allow_missing_traces,
+        copy_results=args.copy_results,
+        title=args.title,
+    )
+    if args.json:
+        _print_json(manifest)
+    else:
+        print(f"Wrote MBS evidence pack: {args.out_dir}")
+        print(f"Classification: {manifest['classification']}")
+        print(f"Report rows: {manifest['checks']['report_rows']}")
+        if manifest["checks"].get("gate_status"):
+            print(f"Gate status: {manifest['checks']['gate_status']}")
+        print(f"Triage status: {manifest['checks']['triage_status']}")
+    has_trace_errors = bool(manifest["checks"].get("trace_errors"))
+    gate_status = manifest["checks"].get("gate_status")
+    return 0 if not has_trace_errors and gate_status in {None, "PASS"} else 2
 
 
 def _cmd_compare(args: argparse.Namespace) -> int:

@@ -33,6 +33,7 @@ mbs demo --write-artifacts
 mbs bench --config benchmarks/models.yaml --out benchmarks/results/ci_bench.json
 mbs report --results benchmarks/results/ci_bench.json --exclude-infra --require-traces --summary-only --out benchmarks/results/ci_report.md
 mbs gate --results benchmarks/results/ci_bench.json --config benchmarks/ci_gate.yaml --out benchmarks/results/ci_gate.json
+mbs evidence-pack --results benchmarks/results/ci_bench.json --gate-config benchmarks/ci_gate.yaml --classification ci --copy-results --out-dir benchmarks/results/evidence_pack_ci
 ```
 
 The `.[test]` extra installs the test runner used by CI. A clean GitHub runner

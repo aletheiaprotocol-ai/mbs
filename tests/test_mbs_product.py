@@ -8,6 +8,7 @@ from mbs.bench import run_benchmark_matrix
 from mbs.cli import main
 from mbs.compare import compare_results, format_compare
 from mbs.demo import build_demo, run_sample_benchmark
+from mbs.evidence import build_evidence_pack
 from mbs.gate import evaluate_gate, format_gate, load_gate_config
 from mbs.lang import compile_language_contract
 from mbs.models import load_model_registry, suite_models, suite_summary, validate_suite_coverage
@@ -954,6 +955,80 @@ def test_cli_gate_uses_yaml_config_and_writes_json(tmp_path, capsys):
     assert "Status: PASS" in capsys.readouterr().out
     assert load_gate_config(config_path)["thresholds"]["min_schema_valid_rate"] == 1.0
     assert written["status"] == "PASS"
+
+
+def test_evidence_pack_writes_reviewable_artifacts(tmp_path):
+    result_path = tmp_path / "bench.json"
+    gate_path = tmp_path / "gate.yaml"
+    out_dir = tmp_path / "pack"
+    result_path.write_text(
+        json.dumps(
+            {
+                "schema": "schema.json",
+                "model": "mock",
+                "summary": {"runs": 1, "schema_valid_rate": 1.0, "semantic_correct_rate": 1.0, "clean_json_rate": 1.0},
+                "rows": [{"status": "PASS", "trace": {"trace_id": "mbs_trace_ok", "tokens": {"output": 3}}}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    gate_path.write_text("thresholds:\n  min_schema_valid_rate: 1.0\n", encoding="utf-8")
+
+    manifest = build_evidence_pack(
+        [result_path],
+        out_dir,
+        classification="ci",
+        gate_config=gate_path,
+        copy_results=True,
+    )
+
+    assert manifest["classification"] == "ci_regression_check_not_broad_model_benchmark"
+    assert manifest["checks"]["gate_status"] == "PASS"
+    assert (out_dir / "README.md").exists()
+    assert (out_dir / "manifest.json").exists()
+    assert (out_dir / "report.md").exists()
+    assert (out_dir / "gate.json").exists()
+    assert (out_dir / "triage.md").exists()
+    assert (out_dir / "raw_results" / "bench.json").exists()
+    assert "not broad model benchmark evidence" in (out_dir / "README.md").read_text(encoding="utf-8")
+
+
+def test_cli_evidence_pack_returns_nonzero_when_gate_fails(tmp_path, capsys):
+    result_path = tmp_path / "bench.json"
+    gate_path = tmp_path / "gate.yaml"
+    out_dir = tmp_path / "pack"
+    result_path.write_text(
+        json.dumps(
+            {
+                "schema": "schema.json",
+                "model": "mock",
+                "summary": {"runs": 1, "schema_valid_rate": 0.5, "semantic_correct_rate": 0.5, "clean_json_rate": 0.5},
+                "rows": [{"status": "FAIL", "trace": {"trace_id": "mbs_trace_bad", "tokens": {"output": 3}}}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    gate_path.write_text("thresholds:\n  min_schema_valid_rate: 1.0\n", encoding="utf-8")
+
+    assert (
+        main(
+            [
+                "evidence-pack",
+                "--results",
+                str(result_path),
+                "--gate-config",
+                str(gate_path),
+                "--classification",
+                "provider",
+                "--out-dir",
+                str(out_dir),
+            ]
+        )
+        == 2
+    )
+    output = capsys.readouterr().out
+    assert "Gate status: FAIL" in output
+    assert json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))["classification"] == "real_provider_behavior_evidence"
 
 
 def test_cli_validate_bad_inline_json_reports_invalid_json(tmp_path, capsys):
