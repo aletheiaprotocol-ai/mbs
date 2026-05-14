@@ -54,6 +54,9 @@ def _validate_schema(
     errors: list[dict[str, Any]],
     warnings: list[dict[str, Any]],
 ) -> None:
+    if "const" in schema and value != schema["const"]:
+        errors.append({"field": path, "type": "const_mismatch", "expected": schema["const"], "received": value})
+
     expected_type = schema.get("type")
     if expected_type == "object" or "properties" in schema:
         if not isinstance(value, dict):
@@ -80,6 +83,10 @@ def _validate_schema(
         if not isinstance(value, list):
             errors.append({"field": path, "type": "wrong_type", "expected": "array", "received": type(value).__name__})
             return
+        if "minItems" in schema and len(value) < schema["minItems"]:
+            errors.append({"field": path, "type": "too_few_items", "minimum": schema["minItems"], "received": len(value)})
+        if "maxItems" in schema and len(value) > schema["maxItems"]:
+            errors.append({"field": path, "type": "too_many_items", "maximum": schema["maxItems"], "received": len(value)})
         item_schema = schema.get("items")
         if isinstance(item_schema, dict):
             for idx, item in enumerate(value):
@@ -100,6 +107,22 @@ def _validate_schema(
                     "received": type(value).__name__,
                 }
             )
+            return
+
+    if isinstance(value, str):
+        if "minLength" in schema and len(value) < schema["minLength"]:
+            errors.append({"field": path, "type": "too_short", "minimum": schema["minLength"], "received": len(value)})
+        if "maxLength" in schema and len(value) > schema["maxLength"]:
+            errors.append({"field": path, "type": "too_long", "maximum": schema["maxLength"], "received": len(value)})
+        pattern = schema.get("pattern")
+        if isinstance(pattern, str) and re.search(pattern, value) is None:
+            errors.append({"field": path, "type": "pattern_mismatch", "pattern": pattern, "received": value})
+
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if "minimum" in schema and value < schema["minimum"]:
+            errors.append({"field": path, "type": "below_minimum", "minimum": schema["minimum"], "received": value})
+        if "maximum" in schema and value > schema["maximum"]:
+            errors.append({"field": path, "type": "above_maximum", "maximum": schema["maximum"], "received": value})
 
 
 def _matches_type(value: Any, expected_type: str | list[str]) -> bool:

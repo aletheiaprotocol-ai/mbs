@@ -244,6 +244,33 @@ Common local endpoint defaults:
 - LM Studio local server: `--endpoint http://127.0.0.1:1234`;
 - Ollama OpenAI-compatible endpoint: `--endpoint http://127.0.0.1:11434/v1`.
 
+Endpoint readiness check before collecting OSS evidence:
+
+```bash
+curl http://127.0.0.1:8000/v1/models
+curl http://127.0.0.1:1234/v1/models
+curl http://127.0.0.1:11434/v1/models
+```
+
+If no endpoint is reachable, do not fabricate OSS evidence. Run the provider
+runner in dry-run mode and keep the output as setup guidance only:
+
+```bash
+python scripts/run_nested_provider_evidence.py \
+  --provider openai-compatible \
+  --endpoint http://127.0.0.1:8000 \
+  --model local-model-id \
+  --classification oss \
+  --mode tool_call \
+  --out-dir results/nested_oss_evidence \
+  --dry-run --json
+```
+
+For HPC-served endpoints, run the same command from the login/submit host that
+can reach the model server and set `--classification hpc`. Keep cluster logs,
+SLURM job ids, model snapshot paths, endpoint URL, and offline/cache settings in
+private run notes unless they are intentionally sanitized for publication.
+
 Use `--classification oss` for local/open model behavior. Do not classify local
 fixture JSONL as `oss`; fixture rows remain software/example checks only.
 
@@ -268,6 +295,7 @@ The default real-provider gate in `benchmarks/provider_gate.example.yaml` checks
 that the run is large enough to be credible for this narrow suite:
 
 - at least one aggregate report row;
+- at least one non-infrastructure behavior row;
 - at least eight traceable case rows;
 - at least eight total case runs;
 - at least one model and one schema;

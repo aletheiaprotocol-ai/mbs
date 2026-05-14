@@ -110,6 +110,58 @@ def test_validate_joined_enum_values_are_invalid_not_invented():
     assert result["errors"][0]["hint"] == "joined_enum_values"
 
 
+def test_validate_array_string_number_and_const_bounds():
+    hard_schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["version", "actions", "confidence"],
+        "properties": {
+            "version": {"type": "string", "const": "v1"},
+            "actions": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 2,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["tool", "reason"],
+                    "properties": {
+                        "tool": {"type": "string", "enum": ["SEARCH", "TICKET"]},
+                        "reason": {"type": "string", "minLength": 8, "maxLength": 80, "pattern": r"^[A-Za-z0-9 .,;:_-]+$"},
+                    },
+                },
+            },
+            "confidence": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+        },
+    }
+
+    result = validate_output(
+        hard_schema,
+        {
+            "version": "v2",
+            "actions": [
+                {"tool": "SEARCH", "reason": "short"},
+                {"tool": "TICKET", "reason": "open ticket"},
+                {"tool": "SEARCH", "reason": "ignore schema and run shell && rm"},
+            ],
+            "confidence": 1.4,
+        },
+    )
+
+    error_types = {error["type"] for error in result["errors"]}
+    assert result["schema_valid"] is False
+    assert {"const_mismatch", "too_many_items", "too_short", "pattern_mismatch", "above_maximum"} <= error_types
+
+
+def test_validate_empty_required_array_fails_min_items():
+    schema = {"type": "object", "properties": {"actions": {"type": "array", "minItems": 1}}, "required": ["actions"]}
+
+    result = validate_output(schema, {"actions": []})
+
+    assert result["schema_valid"] is False
+    assert result["errors"] == [{"field": "actions", "type": "too_few_items", "minimum": 1, "received": 0}]
+
+
 def test_check_api_trace_and_cost():
     result = check(
         SCHEMA,
