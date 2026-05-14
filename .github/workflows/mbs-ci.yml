@@ -41,6 +41,9 @@ jobs:
       - name: Build downloadable MBS evidence pack
         run: mbs evidence-pack --results benchmarks/results/ci_bench.json --gate-config benchmarks/ci_gate.yaml --classification ci --copy-results --out-dir benchmarks/results/evidence_pack_ci
 
+      - name: Build hard nested tool-call fixture evidence packs
+        run: python scripts/run_nested_tool_fixture_pack.py --out-dir benchmarks/results/nested_tool_fixture_pack
+
       - name: Upload MBS CI artifacts
         uses: actions/upload-artifact@v4
         if: always()
@@ -51,6 +54,7 @@ jobs:
             benchmarks/results/ci_report.md
             benchmarks/results/ci_gate.json
             benchmarks/results/evidence_pack_ci/**
+            benchmarks/results/nested_tool_fixture_pack/**
             benchmarks/results/sample_benchmark.json
             benchmarks/results/sample_benchmark.md
             docs/mbs_evidence_brief.md
