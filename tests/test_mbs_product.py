@@ -761,6 +761,27 @@ def test_provider_gate_requires_behavior_rows_when_configured(tmp_path):
     assert {"metric": "behavior_rows", "actual": 0, "required": ">= 1"} in gate["failures"]
 
 
+def test_provider_matrix_summary_preserves_failed_gate_evidence():
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "assert_provider_matrix_summary.py"
+    spec = importlib.util.spec_from_file_location("assert_provider_matrix_summary", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    summary_path = root / "docs" / "provider_matrix_summary_20260514" / "provider_matrix_summary.json"
+    result = module.validate_summary(summary_path)
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+
+    assert result == {"status": "PASS", "failures": [], "rows": 3}
+    assert summary["raw_artifacts_public"] is False
+    assert {row["gate_status"] for row in summary["rows"]} == {"FAIL"}
+    assert {row["primary_failure_mode"] for row in summary["rows"]} == {
+        "schema_clean_semantic_mismatch",
+        "format_schema_failure",
+    }
+
+
 def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     script_path = root / "scripts" / "run_nested_provider_evidence.py"

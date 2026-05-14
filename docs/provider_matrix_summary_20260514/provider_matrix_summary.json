@@ -1,0 +1,79 @@
+{
+  "release_id": "provider_matrix_summary_20260514",
+  "generated_at": "2026-05-14",
+  "classification": "provider",
+  "classification_label": "real_provider_behavior_evidence_sanitized_summary",
+  "suite": "hard_nested_tool_arguments",
+  "schema": "examples/nested_tool_arguments/schema.json",
+  "cases": "examples/nested_tool_arguments/cases.jsonl",
+  "case_count": 8,
+  "runner": "scripts/run_nested_provider_evidence.py",
+  "gate_config": "benchmarks/provider_gate.example.yaml",
+  "raw_artifacts_public": false,
+  "claim_boundary": "Sanitized aggregate matrix only. Raw provider responses and run artifacts remain in ignored local results directories unless separately scrubbed and intentionally released.",
+  "thresholds": {
+    "min_traceable_case_rows": 8,
+    "min_total_runs": 8,
+    "min_behavior_rows": 1,
+    "min_schema_valid_rate": 0.9,
+    "min_semantic_correct_rate": 0.8,
+    "min_clean_json_rate": 0.9,
+    "max_missing_trace_rows": 0,
+    "max_uncheckable_result_rows": 0,
+    "max_infra_failed_rows": 0
+  },
+  "rows": [
+    {
+      "provider": "Azure OpenAI",
+      "deployment": "gpt-5-3-chat",
+      "gate_status": "FAIL",
+      "schema_valid_rate": 1.0,
+      "semantic_correct_rate": 0.625,
+      "clean_json_rate": 1.0,
+      "traceable_case_rows": 8,
+      "infra_failed_rows": 0,
+      "primary_failure_mode": "schema_clean_semantic_mismatch",
+      "finding": "Schema-clean tool calls, but semantic tool/priority decisions failed on 3/8 cases.",
+      "product_interpretation": "Valid JSON/tool-call arguments are not sufficient for correct agent behavior; MBS catches schema-clean semantic decision errors."
+    },
+    {
+      "provider": "Azure OpenAI",
+      "deployment": "gpt-5-nano",
+      "gate_status": "FAIL",
+      "schema_valid_rate": 0.0,
+      "semantic_correct_rate": 0.0,
+      "clean_json_rate": 0.0,
+      "traceable_case_rows": 8,
+      "infra_failed_rows": 0,
+      "primary_failure_mode": "format_schema_failure",
+      "finding": "Format/schema failure mode under this hard nested tool-call contract.",
+      "product_interpretation": "MBS separates structure/format failures from semantic decision failures and keeps the run infra-clean."
+    },
+    {
+      "provider": "Azure OpenAI",
+      "deployment": "gpt-4-1-nano",
+      "gate_status": "FAIL",
+      "schema_valid_rate": 1.0,
+      "semantic_correct_rate": 0.375,
+      "clean_json_rate": 1.0,
+      "traceable_case_rows": 8,
+      "infra_failed_rows": 0,
+      "primary_failure_mode": "schema_clean_semantic_mismatch",
+      "finding": "Schema-clean tool calls, but semantic decisions failed on 5/8 cases.",
+      "product_interpretation": "Smaller/cheaper deployments may produce clean structure while still choosing wrong tools or priorities."
+    }
+  ],
+  "checks": {
+    "all_rows_are_failures": true,
+    "all_rows_traceable": true,
+    "no_infra_failures": true,
+    "semantic_failures_preserved": true,
+    "format_schema_failure_preserved": true
+  },
+  "non_claims": [
+    "This summary does not claim broad provider reliability.",
+    "This summary does not claim any listed deployment passed the provider gate.",
+    "This summary does not publish raw provider responses.",
+    "This summary does not mix fixture evidence with provider behavior evidence."
+  ]
+}

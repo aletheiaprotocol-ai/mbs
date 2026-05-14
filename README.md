@@ -124,6 +124,7 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 - `docs/mbs_ci_regression_gate.md`
 - `docs/mbs_sanitized_evidence_release_may2026.md`
 - `docs/mbs_nested_provider_matrix_may2026.md`
+- `docs/provider_matrix_summary_20260514/README.md`
 - `docs/mbs_azure_provider_benchmark_may2026.md`
 - `docs/mbs_failure_triage_examples.md`
 - `docs/mbs_json_mode_tool_calling_plan.md`

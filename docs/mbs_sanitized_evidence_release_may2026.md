@@ -17,6 +17,7 @@ ignored/local unless intentionally scrubbed and approved for release.
 | `scripts/build_nested_provider_evidence.py` | Classified evidence-pack builder for provider/OSS/HPC/fixture rows. |
 | `benchmarks/provider_gate.example.yaml` | Real provider/OSS/HPC example gate with trace and behavior coverage. |
 | `docs/mbs_nested_provider_matrix_may2026.md` | Sanitized three-deployment Azure matrix summary. |
+| `docs/provider_matrix_summary_20260514/` | Public-safe JSON + Markdown provider matrix summary package. |
 | `docs/mbs_provider_recipes.md` | Provider, OpenAI-compatible, and local OSS endpoint guidance. |
 | `docs/mbs_evidence_pack.md` | Evidence-pack and sanitized-release packaging guidance. |
 

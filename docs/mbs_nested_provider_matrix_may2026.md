@@ -28,6 +28,9 @@ headers, or raw provider logs that might contain sensitive metadata.
 
 ## Azure Matrix Summary
 
+Machine-readable sanitized package:
+`docs/provider_matrix_summary_20260514/provider_matrix_summary.json`.
+
 | Deployment | Gate | Schema valid | Semantic correct | Clean JSON | Traceable cases | Infra failures | Main finding |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | `gpt-5-3-chat` | `FAIL` | `1.0` | `0.625` | `1.0` | `8` | `0` | Schema-clean tool calls, but semantic tool/priority decisions failed on 3/8 cases. |
