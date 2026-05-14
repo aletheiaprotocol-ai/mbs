@@ -24,7 +24,7 @@ from mbs.retry_audit import audit_retry_attempts, format_retry_audit, write_retr
 from mbs.triage import triage_results, write_triage_json
 
 CLASSIFICATION = "fixture_retry_matrix_not_provider_benchmark"
-STRATEGIES = ("no_retry", "format_retry", "semantic_retry", "best_of_retry")
+STRATEGIES = ("no_retry", "mbs_retry", "format_retry", "semantic_retry", "best_of_retry")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -67,6 +67,7 @@ def main(argv: list[str] | None = None) -> int:
     policy_metrics: dict[str, dict[str, Any]] = {}
     for strategy in STRATEGIES:
         rows = [_row_for_strategy(row, good_by_case[row["case_id"]], strategy) for row in bad_payload["rows"]]
+        summary = summarize(rows)
         payload = {
             "classification": CLASSIFICATION,
             "schema": str(schema),
@@ -75,14 +76,14 @@ def main(argv: list[str] | None = None) -> int:
             "prompt_style": "full",
             "decoding_mode": f"tool_call_{strategy}",
             "retry_policy": strategy,
-            "summary": summarize(rows),
+            "summary": summary,
             "rows": rows,
         }
         path = out_dir / f"{strategy}.mbs.json"
         _write_json(path, payload)
         strategy_files[strategy] = path
         strategy_summaries[strategy] = payload["summary"]
-        policy_metrics[strategy] = _policy_metrics(rows)
+        policy_metrics[strategy] = _policy_metrics(rows, summary)
 
     report = aggregate_results(list(strategy_files.values()))
     report_path = out_dir / "report.md"
@@ -128,6 +129,8 @@ def main(argv: list[str] | None = None) -> int:
         "no_retry_schema_valid_rate": strategy_summaries["no_retry"].get("schema_valid_rate"),
         "no_retry_semantic_correct_rate": strategy_summaries["no_retry"].get("semantic_correct_rate"),
         "format_retry_schema_valid_rate": strategy_summaries["format_retry"].get("schema_valid_rate"),
+        "mbs_retry_schema_valid_rate": strategy_summaries["mbs_retry"].get("schema_valid_rate"),
+        "mbs_retry_semantic_correct_rate": strategy_summaries["mbs_retry"].get("semantic_correct_rate"),
         "semantic_retry_semantic_correct_rate": strategy_summaries["semantic_retry"].get("semantic_correct_rate"),
         "best_of_schema_valid_rate": strategy_summaries["best_of_retry"].get("schema_valid_rate"),
         "best_of_semantic_correct_rate": strategy_summaries["best_of_retry"].get("semantic_correct_rate"),
@@ -139,6 +142,8 @@ def main(argv: list[str] | None = None) -> int:
         checks["case_count"] == 25
         and checks["no_retry_schema_valid_rate"] == 0.68
         and checks["no_retry_semantic_correct_rate"] == 0.16
+        and checks["mbs_retry_schema_valid_rate"] == 1.0
+        and checks["mbs_retry_semantic_correct_rate"] == 1.0
         and checks["format_retry_schema_valid_rate"] == 1.0
         and checks["semantic_retry_semantic_correct_rate"] > checks["no_retry_semantic_correct_rate"]
         and checks["best_of_schema_valid_rate"] == 1.0
@@ -195,6 +200,8 @@ def _row_for_strategy(bad_row: dict[str, Any], good_row: dict[str, Any], strateg
 def _should_repair(row: dict[str, Any], strategy: str) -> bool:
     if strategy == "no_retry":
         return False
+    if strategy == "mbs_retry":
+        return not _row_passes(row)
     if strategy == "best_of_retry":
         return not _row_passes(row)
     if strategy == "format_retry":
@@ -222,17 +229,59 @@ def _attempt_from_row(row: dict[str, Any], attempt: int, *, selected: bool) -> d
     }
 
 
-def _policy_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _attempt_score(attempt: dict[str, Any]) -> tuple[int, int, int, int]:
+    semantic = attempt.get("semantic_correct")
+    semantic_rank = {False: 0, None: 1, True: 2}.get(semantic, 1)
+    schema_rank = 1 if attempt.get("schema_valid") else 0
+    json_rank = 1 if attempt.get("json_valid") else 0
+    failure_penalty = -_failure_severity(str(attempt.get("failure_type") or ""))
+    return (schema_rank, semantic_rank, json_rank, failure_penalty)
+
+
+def _failure_severity(failure_type: str) -> int:
+    return {
+        "invalid_json": 5,
+        "invented_enum": 4,
+        "invalid_enum": 3,
+        "wrong_type": 3,
+        "missing_required_key": 3,
+        "semantic_mismatch": 2,
+        "extra_key": 1,
+    }.get(failure_type, 0)
+
+
+def _policy_metrics(rows: list[dict[str, Any]], summary: dict[str, Any]) -> dict[str, Any]:
     runs = len(rows)
     retried = [row for row in rows if int(row.get("retry_count") or 0) > 0]
     review = [row for row in rows if row.get("status") == "REVIEW"]
     failed = [row for row in rows if row.get("status") == "FAIL"]
+    improved = 0
+    unchanged = 0
+    regressions = 0
+    for row in rows:
+        attempts = [item for item in row.get("attempts", []) if isinstance(item, dict)]
+        if len(attempts) < 2:
+            continue
+        first_score = _attempt_score(attempts[0])
+        selected = next((attempt for attempt in attempts if attempt.get("selected")), attempts[-1])
+        selected_score = _attempt_score(selected)
+        if selected_score > first_score:
+            improved += 1
+        elif selected_score == first_score:
+            unchanged += 1
+        else:
+            regressions += 1
     return {
         "runs": runs,
         "retried_rows": len(retried),
+        "improved_rows": improved,
+        "unchanged_rows": unchanged,
+        "selected_attempt_regressions": regressions,
         "human_review_rate": round(len(review) / runs, 4) if runs else None,
         "fail_rate": round(len(failed) / runs, 4) if runs else None,
         "repair_applied_rate": round(len(retried) / runs, 4) if runs else None,
+        "clean_json_rate": summary.get("clean_json_rate"),
+        "cost_per_valid_output_tokens": summary.get("cost_per_valid_output_tokens"),
     }
 
 

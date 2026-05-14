@@ -845,6 +845,8 @@ def test_nested_retry_matrix_reports_repair_policies(tmp_path, monkeypatch, caps
     assert payload["checks"]["case_count"] == 25
     assert payload["checks"]["no_retry_schema_valid_rate"] == 0.68
     assert payload["checks"]["no_retry_semantic_correct_rate"] == 0.16
+    assert payload["checks"]["mbs_retry_schema_valid_rate"] == 1.0
+    assert payload["checks"]["mbs_retry_semantic_correct_rate"] == 1.0
     assert payload["checks"]["format_retry_schema_valid_rate"] == 1.0
     assert payload["checks"]["semantic_retry_semantic_correct_rate"] == 0.8
     assert payload["checks"]["best_of_schema_valid_rate"] == 1.0
