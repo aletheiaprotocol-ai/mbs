@@ -974,6 +974,27 @@ def test_mbs_lang_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch
     assert str(root / "examples" / "multilingual_risk_review" / "cases.jsonl") in plan["commands"][0]
 
 
+def test_mbs_lang_provider_summary_preserves_provider_boundary():
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "assert_mbs_lang_provider_summary.py"
+    spec = importlib.util.spec_from_file_location("assert_mbs_lang_provider_summary", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    summary_path = root / "docs" / "mbs_lang_provider_summary_20260514" / "mbs_lang_provider_summary.json"
+    payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    failures = module.validate_summary(payload)
+
+    assert failures == []
+    assert payload["classification_label"] == "real_provider_mbs_lang_behavior_evidence"
+    assert payload["raw_provider_outputs_public"] is False
+    assert payload["rows"][0]["gate_status"] == "PASS"
+    assert payload["rows"][0]["case_runs"] == 7
+    assert payload["rows"][0]["traceable_case_rows"] == 7
+    assert payload["rows"][0]["languages"] == ["ar", "de", "en", "es", "fr", "hu", "tr"]
+
+
 def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     script_path = root / "scripts" / "run_nested_provider_evidence.py"

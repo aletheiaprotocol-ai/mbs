@@ -1,0 +1,43 @@
+{
+  "title": "MBS-Lang Azure provider summary",
+  "date": "2026-05-14",
+  "classification": "provider",
+  "classification_label": "real_provider_mbs_lang_behavior_evidence",
+  "evidence_boundary": "Real provider behavior evidence only for the listed multilingual schema, seven cases, languages, deployment, json_mode, gate thresholds, and run settings. This is not broad multilingual reliability or translation-quality evidence.",
+  "raw_provider_outputs_public": false,
+  "raw_provider_outputs_reason": "Raw provider JSONL remains in ignored local results paths unless separately scrubbed and intentionally released.",
+  "schema": "examples/multilingual_risk_review/schema.json",
+  "cases": "examples/multilingual_risk_review/cases.jsonl",
+  "gate_config": "benchmarks/provider_lang_gate.example.yaml",
+  "runner": "scripts/run_lang_provider_evidence.py",
+  "builder": "scripts/build_lang_provider_evidence.py",
+  "rows": [
+    {
+      "model": "gpt-5-3-chat",
+      "provider_family": "azure_openai",
+      "decoding_mode": "json_mode",
+      "gate_status": "PASS",
+      "rows": 1,
+      "case_runs": 7,
+      "traceable_case_rows": 7,
+      "missing_trace_rows": 0,
+      "infra_failed_rows": 0,
+      "schema_valid_rate": 1.0,
+      "semantic_correct_rate": 1.0,
+      "clean_json_rate": 1.0,
+      "valid_json_rate": 1.0,
+      "cost_per_valid_output_tokens": 207.0,
+      "languages": ["ar", "de", "en", "es", "fr", "hu", "tr"],
+      "input_language_rows_present": true,
+      "contract_language_en": true,
+      "trace_errors": 0,
+      "interpretation": "Seven-case multilingual provider gate passed for the listed deployment and settings. Repeat across more providers, OSS/HPC models, schemas, seeds, and languages before broad reliability claims."
+    }
+  ],
+  "non_claims": [
+    "Does not claim universal multilingual model reliability.",
+    "Does not evaluate translation quality independently of the structured risk-review task.",
+    "Does not compare providers or OSS/HPC models.",
+    "Does not publish raw provider outputs."
+  ]
+}

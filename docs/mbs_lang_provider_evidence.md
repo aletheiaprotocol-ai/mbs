@@ -83,3 +83,9 @@ A reviewable MBS-Lang behavior claim should include:
 ## Provider Gate
 
 Use `benchmarks/provider_lang_gate.example.yaml` as the starting point. Copy and tune it for the target application risk; do not silently lower thresholds after seeing failures.
+
+## Sanitized Public Summary
+
+The first sanitized provider summary is published at `docs/mbs_lang_provider_summary_20260514/README.md`.
+
+It records a seven-case Azure `gpt-5-3-chat` JSON-mode provider run with complete trace coverage and gate `PASS`, while keeping raw provider response JSONL out of the public package.
