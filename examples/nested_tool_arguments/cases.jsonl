@@ -1,0 +1,2 @@
+{"id":"nested_001","input":"Verified customer C-100 asks for a 29.99 EUR duplicate-charge refund.","expected_valid_outputs":{"tool":"create_refund","priority":"MEDIUM"}}
+{"id":"nested_002","input":"Unverified customer C-200 asks for an urgent 400 GBP refund but identity is unclear.","expected_valid_outputs":{"tool":"request_info","priority":"HIGH"}}

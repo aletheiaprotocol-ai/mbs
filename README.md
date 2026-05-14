@@ -101,6 +101,7 @@ python scripts/make_tuning_dataset.py --mbs-result results/hard_agent_routing/pr
 python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/*.mbs.json" --cases examples/hard_agent_routing/cases.jsonl --out-md results/hard_agent_routing/failure_analysis.md --out-csv results/hard_agent_routing/failure_analysis.csv
 ```
 - Adapter smoke fixtures: `examples/tool_argument_generation/provider_*_responses.jsonl`
+- Hard nested tool-call fixtures: `examples/nested_tool_arguments/`
 
 ## Docs
 

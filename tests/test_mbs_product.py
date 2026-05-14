@@ -393,6 +393,74 @@ def test_provider_json_mode_fixture_supports_gate_and_evidence_pack(tmp_path):
     assert manifest["checks"]["gate_status"] == "PASS"
 
 
+def test_nested_tool_argument_fixtures_separate_schema_and_semantic_failures(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    schema_path = root / "examples" / "nested_tool_arguments" / "schema.json"
+    cases_path = root / "examples" / "nested_tool_arguments" / "cases.jsonl"
+    good_responses = root / "examples" / "nested_tool_arguments" / "provider_tool_call_good.jsonl"
+    bad_responses = root / "examples" / "nested_tool_arguments" / "provider_tool_call_bad.jsonl"
+    good_out = tmp_path / "nested_good.mbs.json"
+    bad_out = tmp_path / "nested_bad.mbs.json"
+
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(good_responses),
+                "--model",
+                "nested-tool-good-fixture",
+                "--decoding-mode",
+                "tool_call",
+                "--out",
+                str(good_out),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(bad_responses),
+                "--model",
+                "nested-tool-bad-fixture",
+                "--decoding-mode",
+                "tool_call",
+                "--out",
+                str(bad_out),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    good_payload = json.loads(good_out.read_text(encoding="utf-8"))
+    bad_payload = json.loads(bad_out.read_text(encoding="utf-8"))
+    first_bad_errors = bad_payload["rows"][0]["errors"]
+
+    assert good_payload["summary"]["schema_valid_rate"] == 1.0
+    assert good_payload["summary"]["semantic_correct_rate"] == 1.0
+    assert bad_payload["summary"]["schema_valid_rate"] == 0.5
+    assert bad_payload["summary"]["semantic_correct_rate"] == 0.5
+    assert {"field": "customer.verified", "type": "wrong_type", "expected": "boolean", "received": "str"} in first_bad_errors
+    assert {"field": "actions[0].currency", "type": "missing_required_key"} in first_bad_errors
+    assert {"field": "actions[0].amount", "type": "wrong_type", "expected": "number", "received": "str"} in first_bad_errors
+    assert bad_payload["rows"][0]["semantic_correct"] is True
+    assert bad_payload["rows"][1]["schema_valid"] is True
+    assert bad_payload["rows"][1]["semantic_correct"] is False
+    assert bad_payload["rows"][1]["failure_type"] == "semantic_mismatch"
+
+
 def test_adapter_fixture_gate_script_writes_manifest(tmp_path, monkeypatch, capsys):
     root = Path(__file__).resolve().parents[1]
     script_path = root / "scripts" / "run_adapter_fixture_gate.py"

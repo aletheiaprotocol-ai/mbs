@@ -1,0 +1,36 @@
+{
+  "type": "object",
+  "properties": {
+    "tool": {
+      "type": "string",
+      "enum": ["create_refund", "escalate_case", "request_info"],
+      "description": "Operational tool to call"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH"]
+    },
+    "customer": {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string"},
+        "verified": {"type": "boolean"}
+      },
+      "required": ["id", "verified"]
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {"type": "string", "enum": ["refund", "notify", "audit"]},
+          "amount": {"type": "number"},
+          "currency": {"type": "string", "enum": ["EUR", "USD", "GBP"]}
+        },
+        "required": ["type", "amount", "currency"]
+      }
+    },
+    "reason": {"type": "string"}
+  },
+  "required": ["tool", "priority", "customer", "actions", "reason"]
+}

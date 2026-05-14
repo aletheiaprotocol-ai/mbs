@@ -135,6 +135,12 @@ mbs evidence-pack \
   --out-dir benchmarks/results/evidence_pack_tool_call_fixture
 ```
 
+For nested tool arguments with arrays and nested objects, see
+`examples/nested_tool_arguments/`. The bad fixture intentionally includes a
+wrong nested boolean, missing nested array key, wrong nested amount type, and a
+valid-schema-but-wrong tool choice so reports separate schema failures from
+semantic mismatch.
+
 ## 4. Compare Text vs JSON Mode vs Tool Calls
 
 After adapting each mode, compare controlled runs. Keep one variable different
