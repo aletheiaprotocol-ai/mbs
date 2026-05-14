@@ -669,6 +669,46 @@ def test_nested_provider_runner_writes_manifest_on_gate_failure(tmp_path, monkey
     assert (out_dir / "triage.json").exists()
 
 
+def test_provider_gate_requires_behavior_rows_when_configured(tmp_path):
+    result_path = tmp_path / "infra_only.json"
+    result_path.write_text(
+        json.dumps(
+            {
+                "schema": "schema.json",
+                "model": "provider-x",
+                "summary": {"runs": 1, "schema_valid_rate": 0.0, "semantic_correct_rate": 0.0, "clean_json_rate": 0.0},
+                "rows": [
+                    {
+                        "status": "INFRA_FAIL",
+                        "failure_type": "DeploymentNotFound",
+                        "trace": {"trace_id": "mbs_trace_infra", "tokens": {"output": 1}},
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    gate = evaluate_gate(
+        [result_path],
+        config={
+            "thresholds": {
+                "min_schema_valid_rate": 0.0,
+                "min_semantic_correct_rate": 0.0,
+                "min_clean_json_rate": 0.0,
+                "min_rows": 1,
+                "min_behavior_rows": 1,
+                "min_total_runs": 1,
+                "max_infra_failed_rows": 1,
+            }
+        },
+    )
+
+    assert gate["status"] == "FAIL"
+    assert gate["summary"]["behavior_rows"] == 0
+    assert {"metric": "behavior_rows", "actual": 0, "required": ">= 1"} in gate["failures"]
+
+
 def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     script_path = root / "scripts" / "run_nested_provider_evidence.py"

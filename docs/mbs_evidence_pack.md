@@ -64,6 +64,23 @@ schemas, cases, model, decoding mode, and run settings in the result files. It i
 not a general provider benchmark unless the run design is broad enough and the
 manifest/report make that clear.
 
+For hard nested tool-call evidence, use the one-command runner so the response
+JSONL, adapted MBS result, gate, triage, evidence pack, and run manifest stay
+together:
+
+```bash
+python scripts/run_nested_provider_evidence.py \
+  --provider openai-compatible \
+  --endpoint http://127.0.0.1:8000 \
+  --model your-local-oss-model \
+  --classification oss \
+  --mode tool_call \
+  --out-dir results/nested_provider_evidence_oss
+```
+
+Use `--classification provider`, `oss`, or `hpc` only for real model behavior.
+Fixture rows are software checks and should remain `fixture`.
+
 ## When The Pack Fails
 
 `mbs evidence-pack` exits nonzero if required trace checks fail or if the included
@@ -72,3 +89,22 @@ gate fails. Treat that as useful evidence. Inspect:
 - `gate.md` for threshold failures;
 - `report.md` for scorecards;
 - `triage.md` for concrete failure examples and trace problems.
+
+## Sanitized Release Packages
+
+Raw provider responses may contain proprietary prompts, model outputs, endpoint
+metadata, or operational details. A sanitized release package should publish the
+reviewable claim boundary without copying raw `results/` directories unless they
+are intentionally scrubbed and approved.
+
+Minimum public package contents:
+
+- a release manifest with included docs and excluded raw artifacts;
+- the exact schema, cases, runner, gate config, model/deployment ids, mode, and
+  classification used;
+- aggregate matrix rows, gate status, and failure-mode summaries;
+- explicit non-claims and next evidence gates;
+- validation records for tests, CI, and any public dashboard deployment.
+
+The May 2026 hard nested package is documented in
+`docs/mbs_sanitized_evidence_release_may2026.md`.
