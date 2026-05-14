@@ -18,8 +18,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from mbs.compiler import load_schema
+from mbs.bench import summarize
+from mbs.compiler import canonical_json, estimate_tokens, load_schema
+from mbs.cost import report_cost
 from mbs.lang import compile_language_contract
+from mbs.validate import validate_output
 
 CLASSIFICATION = "fixture_mbs_lang_matrix_not_provider_benchmark"
 LANGUAGE_NAMES = {
@@ -31,6 +34,7 @@ LANGUAGE_NAMES = {
     "hu": "Hungarian",
     "tr": "Turkish",
 }
+REQUIRED_DOMAINS = ["fintech", "procurement", "qme_source_review", "support", "tool_call_safety"]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -57,14 +61,24 @@ def main(argv: list[str] | None = None) -> int:
 
     ratios = [row["token_fairness_ratio"] for row in rows if row["token_fairness_ratio"] is not None]
     failures = [failure for row in rows for failure in row["contract_boundary_failures"]]
+    benchmark_summary = summarize(rows)
+    cost = report_cost(rows)
     summary = {
         "languages": sorted({row["input_language"] for row in rows}),
+        "domains": sorted({row["domain"] for row in rows if row.get("domain")}),
         "rows": len(rows),
         "case_files": len(case_files),
         "min_token_fairness_ratio": min(ratios) if ratios else None,
         "max_token_fairness_ratio": max(ratios) if ratios else None,
         "avg_token_fairness_ratio": round(sum(ratios) / len(ratios), 3) if ratios else None,
         "contract_boundary_failures": len(failures),
+        "schema_valid_rate": benchmark_summary.get("schema_valid_rate"),
+        "semantic_correct_rate": benchmark_summary.get("semantic_correct_rate"),
+        "language_mismatch_rate": _rate(rows, "language_mismatch"),
+        "clean_json_rate": benchmark_summary.get("clean_json_rate"),
+        "cost_per_valid_output_tokens": cost["cost_per_valid_output_tokens"],
+        "valid_outputs": cost["valid_outputs"],
+        "failed_outputs": cost["failed_outputs"],
     }
     matrix = {
         "classification": CLASSIFICATION,
@@ -85,19 +99,29 @@ def main(argv: list[str] | None = None) -> int:
 
     checks = {
         "languages": summary["languages"],
+        "domains": summary["domains"],
         "rows": summary["rows"],
         "case_files": summary["case_files"],
         "contract_boundary_failures": summary["contract_boundary_failures"],
         "max_token_fairness_ratio": summary["max_token_fairness_ratio"],
+        "schema_valid_rate": summary["schema_valid_rate"],
+        "semantic_correct_rate": summary["semantic_correct_rate"],
+        "language_mismatch_rate": summary["language_mismatch_rate"],
+        "cost_per_valid_output_tokens": summary["cost_per_valid_output_tokens"],
         "english_baselines_present": all(row["english_baseline_tokens"] > 0 for row in rows),
         "schema_keys_preserved": all(row["schema_keys_preserved"] for row in rows),
         "enum_values_preserved": all(row["enum_values_preserved"] for row in rows),
     }
     passed = (
         checks["languages"] == ["ar", "de", "en", "es", "fr", "hu", "tr"]
-        and checks["rows"] == 8
+        and checks["domains"] == REQUIRED_DOMAINS
+        and checks["rows"] == 15
         and checks["case_files"] == 7
         and checks["contract_boundary_failures"] == 0
+        and checks["schema_valid_rate"] == 1.0
+        and checks["semantic_correct_rate"] == 1.0
+        and checks["language_mismatch_rate"] == 0.0
+        and checks["cost_per_valid_output_tokens"] is not None
         and checks["english_baselines_present"] is True
         and checks["schema_keys_preserved"] is True
         and checks["enum_values_preserved"] is True
@@ -129,6 +153,7 @@ def _rows_for_case_file(schema: dict[str, Any], case_file: Path) -> list[dict[st
         case = json.loads(line)
         input_language = case.get("input_language") or case_file.stem.removeprefix("cases_")
         output_language = case.get("output_language") or input_language
+        expected_output_language = case.get("expected_output_language") or output_language
         compiled = compile_language_contract(
             schema,
             input_language=input_language,
@@ -147,13 +172,20 @@ def _rows_for_case_file(schema: dict[str, Any], case_file: Path) -> list[dict[st
         failures = [f"missing_key:{key}" for key, ok in key_checks.items() if not ok]
         failures.extend(f"missing_enum:{value}" for value, ok in enum_checks.items() if not ok)
         failures.extend(f"missing_wrapper:{name}" for name, ok in wrapper_checks.items() if not ok)
+        fixture_output = case.get("fixture_output") or _default_fixture_output(case)
+        validation = validate_output(schema, fixture_output)
+        semantic_correct = _semantic_result(validation.get("output"), case.get("expected_valid_outputs"))
+        language_mismatch = output_language != expected_output_language
+        output_tokens = estimate_tokens(canonical_json(validation.get("output")))
         rows.append(
             {
                 "case_id": case.get("id"),
                 "case_file": str(case_file),
+            "domain": case.get("domain", "unknown"),
                 "language_name": LANGUAGE_NAMES.get(input_language, input_language),
                 "input_language": input_language,
                 "output_language": output_language,
+            "expected_output_language": expected_output_language,
                 "contract_language": "en",
                 "token_estimate": compiled["token_estimate"],
                 "english_baseline_tokens": compiled["english_baseline_tokens"],
@@ -164,6 +196,15 @@ def _rows_for_case_file(schema: dict[str, Any], case_file: Path) -> list[dict[st
                 "enum_values_preserved": all(enum_checks.values()),
                 "wrapper_instructions_present": all(wrapper_checks.values()),
                 "contract_boundary_failures": failures,
+                "fixture_output": fixture_output,
+                "json_valid": validation["json_valid"],
+                "schema_valid": validation["schema_valid"],
+                "semantic_correct": semantic_correct,
+                "language_mismatch": language_mismatch,
+                "failure_type": None if validation["schema_valid"] and semantic_correct is not False and not language_mismatch else _failure_type(validation, semantic_correct, language_mismatch),
+                "errors": validation["errors"],
+                "warnings": validation["warnings"],
+                "tokens": {"mbs_contract": compiled["token_estimate"], "output": output_tokens},
             }
         )
     return rows
@@ -178,6 +219,66 @@ def _enum_values(schema: dict[str, Any]) -> list[str]:
     return values
 
 
+def _default_fixture_output(case: dict[str, Any]) -> dict[str, str]:
+    expected = case.get("expected_valid_outputs") or []
+    decision = "REVIEW"
+    risk_level = "MEDIUM"
+    for value in expected:
+        if value in {"APPROVE", "REVIEW", "BLOCK", "ESCALATE"}:
+            decision = value
+            break
+    for value in expected:
+        if value in {"LOW", "MEDIUM", "HIGH", "CRITICAL"}:
+            risk_level = value
+            break
+    return {"decision": decision, "risk_level": risk_level, "reason": str(case.get("semantic_label") or "Fixture output.")}
+
+
+def _semantic_result(output: Any, expected: Any) -> bool | None:
+    if expected is None:
+        return None
+    if not isinstance(output, dict):
+        return False
+    if isinstance(expected, dict):
+        return all(output.get(key) == value for key, value in expected.items())
+    if not isinstance(expected, list):
+        expected = [expected]
+    flat_values = set(_flatten_values(output))
+    return any(item in flat_values for item in expected)
+
+
+def _flatten_values(value: Any) -> list[Any]:
+    if isinstance(value, dict):
+        values: list[Any] = []
+        for child in value.values():
+            values.extend(_flatten_values(child))
+        return values
+    if isinstance(value, list):
+        values = []
+        for child in value:
+            values.extend(_flatten_values(child))
+        return values
+    return [value]
+
+
+def _failure_type(validation: dict[str, Any], semantic_correct: bool | None, language_mismatch: bool) -> str | None:
+    if validation.get("errors"):
+        return validation["errors"][0].get("type")
+    if semantic_correct is False:
+        return "semantic_mismatch"
+    if language_mismatch:
+        return "language_mismatch"
+    if validation.get("warnings"):
+        return validation["warnings"][0].get("type")
+    return None
+
+
+def _rate(rows: list[dict[str, Any]], key: str) -> float | None:
+    if not rows:
+        return None
+    return round(sum(1 for row in rows if row.get(key)) / len(rows), 4)
+
+
 def _format_markdown(matrix: dict[str, Any]) -> str:
     lines = [
         "# MBS-Lang Fixture Matrix",
@@ -189,23 +290,29 @@ def _format_markdown(matrix: dict[str, Any]) -> str:
         "## Summary",
         "",
         f"- Languages: {', '.join(matrix['summary']['languages'])}",
+        f"- Domains: {', '.join(matrix['summary']['domains'])}",
         f"- Rows: {matrix['summary']['rows']}",
         f"- Case files: {matrix['summary']['case_files']}",
         f"- Token Fairness Ratio range: {matrix['summary']['min_token_fairness_ratio']} - {matrix['summary']['max_token_fairness_ratio']}",
         f"- Average Token Fairness Ratio: {matrix['summary']['avg_token_fairness_ratio']}",
+        f"- Schema-valid rate: {matrix['summary']['schema_valid_rate']}",
+        f"- Semantic correctness rate: {matrix['summary']['semantic_correct_rate']}",
+        f"- Language mismatch rate: {matrix['summary']['language_mismatch_rate']}",
+        f"- Cost per valid output tokens: {matrix['summary']['cost_per_valid_output_tokens']}",
         f"- Contract boundary failures: {matrix['summary']['contract_boundary_failures']}",
         "",
         "## Rows",
         "",
-        "| case | input | output | contract | tokens | English baseline | TFR | boundary |",
-        "|---|---:|---:|---:|---:|---:|---:|---|",
+        "| case | domain | input | output | contract | schema | semantic | language mismatch | TFR | cost tokens | boundary |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for row in matrix["rows"]:
         boundary = "PASS" if not row["contract_boundary_failures"] else "; ".join(row["contract_boundary_failures"])
         lines.append(
-            "| {case_id} | {input_language} | {output_language} | {contract_language} | {token_estimate} | "
-            "{english_baseline_tokens} | {token_fairness_ratio} | {boundary} |".format(
+            "| {case_id} | {domain} | {input_language} | {output_language} | {contract_language} | {schema_valid} | "
+            "{semantic_correct} | {language_mismatch} | {token_fairness_ratio} | {row_cost} | {boundary} |".format(
                 **row,
+                row_cost=row["tokens"]["mbs_contract"] + row["tokens"]["output"],
                 boundary=boundary,
             )
         )

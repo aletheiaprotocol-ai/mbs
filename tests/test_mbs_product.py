@@ -879,13 +879,28 @@ def test_mbs_lang_matrix_reports_token_fairness_and_boundaries(tmp_path, monkeyp
     assert payload["status"] == "PASS"
     assert payload["classification"] == "fixture_mbs_lang_matrix_not_provider_benchmark"
     assert payload["checks"]["languages"] == ["ar", "de", "en", "es", "fr", "hu", "tr"]
-    assert payload["checks"]["rows"] == 8
+    assert payload["checks"]["domains"] == ["fintech", "procurement", "qme_source_review", "support", "tool_call_safety"]
+    assert payload["checks"]["rows"] == 15
     assert payload["checks"]["case_files"] == 7
     assert payload["checks"]["contract_boundary_failures"] == 0
+    assert payload["checks"]["schema_valid_rate"] == 1.0
+    assert payload["checks"]["semantic_correct_rate"] == 1.0
+    assert payload["checks"]["language_mismatch_rate"] == 0.0
+    assert payload["checks"]["cost_per_valid_output_tokens"] is not None
     assert payload["checks"]["schema_keys_preserved"] is True
     assert payload["checks"]["enum_values_preserved"] is True
     assert matrix["evidence_boundary"].startswith("Deterministic MBS-Lang fixture matrix")
     assert all(row["token_fairness_ratio"] is not None for row in matrix["rows"])
+    assert {row["domain"] for row in matrix["rows"]} == {
+        "fintech",
+        "procurement",
+        "qme_source_review",
+        "support",
+        "tool_call_safety",
+    }
+    assert all(row["schema_valid"] is True for row in matrix["rows"])
+    assert all(row["semantic_correct"] is True for row in matrix["rows"])
+    assert all(row["language_mismatch"] is False for row in matrix["rows"])
     assert (tmp_path / "mbs_lang_matrix.md").exists()
 
 
@@ -928,6 +943,7 @@ def test_mbs_lang_provider_fixture_builds_classified_evidence(tmp_path, monkeypa
     assert payload["checks"]["gate_status"] == "PASS"
     assert payload["checks"]["input_language_rows_present"] is True
     assert payload["checks"]["contract_language_en"] is True
+    assert result["summary"]["runs"] == 15
     assert result["summary"]["schema_valid_rate"] == 1.0
     assert result["summary"]["semantic_correct_rate"] == 1.0
     assert {row["input_language"] for row in result["rows"]} == {"ar", "de", "en", "es", "fr", "hu", "tr"}
