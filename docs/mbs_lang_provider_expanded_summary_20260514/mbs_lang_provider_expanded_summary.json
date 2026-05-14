@@ -1,0 +1,49 @@
+{
+  "title": "MBS-Lang expanded Azure provider evidence summary",
+  "date": "2026-05-14",
+  "classification": "provider",
+  "classification_label": "real_provider_mbs_lang_behavior_evidence",
+  "evidence_boundary": "Real provider behavior evidence only for the listed 15-row multilingual schema, cases, languages, deployment, decoding mode, gate thresholds, and run settings. This is not broad multilingual reliability or translation-quality evidence.",
+  "raw_provider_outputs_public": false,
+  "raw_provider_outputs_reason": "Raw provider JSONL remains in ignored local results paths unless separately scrubbed and intentionally released.",
+  "schema": "examples/multilingual_risk_review/schema.json",
+  "cases": "examples/multilingual_risk_review/cases.jsonl",
+  "gate_config": "benchmarks/provider_lang_gate.example.yaml",
+  "runner": "scripts/run_lang_provider_evidence.py",
+  "builder": "scripts/build_lang_provider_evidence.py",
+  "source_artifact_local_path": "results/mbs_lang_provider_evidence_azure_gpt_5_3_chat_20260514_expanded",
+  "rows": [
+    {
+      "model": "gpt-5-3-chat",
+      "provider_family": "azure_openai",
+      "decoding_mode": "json_mode",
+      "gate_status": "FAIL",
+      "manifest_status": "FAIL",
+      "rows": 1,
+      "case_runs": 15,
+      "traceable_case_rows": 15,
+      "missing_trace_rows": 0,
+      "infra_failed_rows": 1,
+      "schema_valid_rate": 0.9333,
+      "semantic_correct_rate": 0.9333,
+      "clean_json_rate": 0.9333,
+      "valid_json_rate": 0.9333,
+      "cost_per_valid_output_tokens": 209.357,
+      "top_failures": "content_filter:16",
+      "primary_failure_mode": "provider_content_filter",
+      "languages": ["ar", "de", "en", "es", "fr", "hu", "tr"],
+      "domains": ["fintech", "procurement", "qme_source_review", "support", "tool_call_safety"],
+      "input_language_rows_present": true,
+      "contract_language_en": true,
+      "trace_errors": 0,
+      "interpretation": "Expanded 15-row multilingual provider gate failed because one Arabic tool-call-safety row triggered provider content filtering. The other rows were traceable and the aggregate schema/semantic/clean-JSON rates were 0.9333. This is useful provider behavior evidence, not an MBS infrastructure failure and not a pass claim."
+    }
+  ],
+  "non_claims": [
+    "Does not claim universal multilingual model reliability.",
+    "Does not evaluate translation quality independently of the structured risk-review task.",
+    "Does not publish raw provider outputs.",
+    "Does not include OSS/HPC model behavior evidence.",
+    "Does not mark the expanded provider gate as passing."
+  ]
+}

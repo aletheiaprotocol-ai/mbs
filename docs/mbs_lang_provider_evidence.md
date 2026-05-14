@@ -89,6 +89,10 @@ The example gate is aligned to the current 15-row multilingual fixture surface a
 
 ## Sanitized Public Summary
 
+The expanded 15-row provider summary is published at `docs/mbs_lang_provider_expanded_summary_20260514/README.md`.
+
+It records a real Azure `gpt-5-3-chat` JSON-mode provider run on the current 15-row suite. The gate failed honestly because one Arabic tool-call-safety row triggered provider content filtering. Raw provider response JSONL is not included in the public package.
+
 The first sanitized provider summary is published at `docs/mbs_lang_provider_summary_20260514/README.md`.
 
 It records historical seven-case Azure provider runs with complete trace coverage for the earlier MBS-Lang surface, while keeping raw provider response JSONL out of the public package. New provider/OSS/HPC runs should use the current 15-row suite and the updated provider language gate.

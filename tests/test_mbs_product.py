@@ -1019,6 +1019,30 @@ def test_mbs_lang_provider_summary_preserves_provider_boundary():
     assert all(row["infra_failed_rows"] == 0 for row in nano_rows)
 
 
+def test_mbs_lang_provider_expanded_summary_preserves_failed_gate_boundary():
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "assert_mbs_lang_provider_expanded_summary.py"
+    spec = importlib.util.spec_from_file_location("assert_mbs_lang_provider_expanded_summary", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    summary_path = root / "docs" / "mbs_lang_provider_expanded_summary_20260514" / "mbs_lang_provider_expanded_summary.json"
+    payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    failures = module.validate_summary(payload)
+    row = payload["rows"][0]
+
+    assert failures == []
+    assert payload["classification_label"] == "real_provider_mbs_lang_behavior_evidence"
+    assert payload["raw_provider_outputs_public"] is False
+    assert row["case_runs"] == 15
+    assert row["traceable_case_rows"] == 15
+    assert row["gate_status"] == "FAIL"
+    assert row["primary_failure_mode"] == "provider_content_filter"
+    assert row["infra_failed_rows"] == 1
+    assert row["top_failures"] == "content_filter:16"
+
+
 def test_mbs_lang_oss_hpc_dry_run_makes_no_model_claim():
     root = Path(__file__).resolve().parents[1]
     dry_run_path = root / "docs" / "mbs_lang_oss_hpc_endpoint_dry_run_20260514" / "endpoint_dry_run.json"
