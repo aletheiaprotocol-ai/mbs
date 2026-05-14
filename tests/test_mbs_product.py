@@ -628,6 +628,47 @@ def test_nested_provider_runner_reuses_existing_responses(tmp_path, monkeypatch)
     assert (out_dir / "evidence_pack" / "manifest.json").exists()
 
 
+def test_nested_provider_runner_writes_manifest_on_gate_failure(tmp_path, monkeypatch):
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "run_nested_provider_evidence.py"
+    spec = importlib.util.spec_from_file_location("run_nested_provider_evidence_fail", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    out_dir = tmp_path / "nested_provider_failed_run"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_nested_provider_evidence.py",
+            "--root",
+            str(root),
+            "--responses",
+            str(root / "examples" / "nested_tool_arguments" / "provider_tool_call_bad.jsonl"),
+            "--out-dir",
+            str(out_dir),
+            "--model",
+            "fixture-nested-tool-provider-bad",
+            "--mode",
+            "tool_call",
+            "--classification",
+            "provider",
+            "--json",
+        ],
+    )
+
+    assert module.main() == 2
+    run_manifest = json.loads((out_dir / "run_manifest.json").read_text(encoding="utf-8"))
+    evidence_manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
+
+    assert run_manifest["status"] == "FAIL"
+    assert run_manifest["gate_status"] == "FAIL"
+    assert run_manifest["command_failures"][0]["returncode"] == 2
+    assert evidence_manifest["checks"]["gate_status"] == "FAIL"
+    assert (out_dir / "gate.json").exists()
+    assert (out_dir / "triage.json").exists()
+
+
 def test_nested_provider_runner_dry_run_plans_collection(tmp_path, monkeypatch):
     root = Path(__file__).resolve().parents[1]
     script_path = root / "scripts" / "run_nested_provider_evidence.py"

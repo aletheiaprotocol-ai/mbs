@@ -143,8 +143,28 @@ def main() -> int:
                 print("RUN", " ".join(command))
         return 0
 
+    command_failures: list[dict[str, Any]] = []
     for command in commands:
-        subprocess.run(command, check=True, capture_output=args.json, text=True)
+        completed = subprocess.run(command, check=False, capture_output=args.json, text=True)
+        if completed.returncode == 0:
+            continue
+        is_build_step = str(command[1]).endswith("build_nested_provider_evidence.py")
+        failure = {
+            "command": command,
+            "returncode": completed.returncode,
+        }
+        if not is_build_step:
+            failure["stdout_tail"] = _tail(completed.stdout)
+            failure["stderr_tail"] = _tail(completed.stderr)
+        command_failures.append(failure)
+        # A nonzero build step can mean the MBS provider gate honestly failed.
+        # That is valid evidence and should produce a clean manifest, not a
+        # Python traceback. Collection failures or missing manifests still fail
+        # immediately because no reviewable evidence exists.
+        if not is_build_step or not (out_dir / "manifest.json").exists():
+            if args.json:
+                _write_json(out_dir / "run_error.json", failure)
+            raise subprocess.CalledProcessError(completed.returncode, command, output=completed.stdout, stderr=completed.stderr)
 
     manifest_path = out_dir / "manifest.json"
     manifest: dict[str, Any] = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
@@ -158,6 +178,7 @@ def main() -> int:
         "classification_label": manifest.get("classification_label"),
         "gate_status": manifest.get("checks", {}).get("gate_status"),
         "trace_errors": manifest.get("checks", {}).get("trace_errors"),
+        "command_failures": command_failures,
         "evidence_boundary": plan["evidence_boundary"],
     }
     _write_json(out_dir / "run_manifest.json", run_manifest)
@@ -187,6 +208,12 @@ def _boundary(classification: str) -> str:
 def _write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def _tail(text: str | None, limit: int = 2000) -> str:
+    if not text:
+        return ""
+    return text[-limit:]
 
 
 if __name__ == "__main__":

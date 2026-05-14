@@ -269,6 +269,11 @@ correctness. Treat that as useful model-behavior evidence, not a tooling error:
 the report and triage files identify which cases were schema-valid but chose the
 wrong tool or priority.
 
+When the underlying MBS provider gate fails, `run_nested_provider_evidence.py`
+still writes `manifest.json`, `gate.json`, `triage.json`, `report.md`,
+`evidence_pack/`, and `run_manifest.json`. The command exits nonzero so CI can
+block a regression, but the artifacts remain reviewable evidence.
+
 ```bash
 python scripts/build_nested_provider_evidence.py \
   --responses results/provider_nested_tool_call.responses.jsonl \
