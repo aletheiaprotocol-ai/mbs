@@ -49,3 +49,11 @@ Every blocker must have:
 - Gate 8 update: real Azure provider-classified serious-workflow evidence is now `PASS`. Evidence manifest: `benchmarks/results/serious_workflow_provider_evidence_azure_pass_candidate/manifest.json`; incident-response/runbook, fintech transaction-risk, and support-ticket triage each pass 8 provider rows. Remaining boundary: cross-provider serious-workflow replications are still needed for claims broader than the Azure pilot evidence.
 - Gate 9 update: latest full local suite is `213 passed, 10 skipped`; focused external/product/release validation is `102 passed`. Remote three-OS CI matrix evidence is still open.
 - Readiness label remains **PRODUCT READY for audited developer/software scope**, not Enterprise Pilot Ready, until remote three-OS matrix CI, broader passing provider/OSS/HPC matrix evidence, and formal compliance/security review are complete.
+
+## 2026-05-18 remote matrix CI fix update
+
+- Gate 1/Gate 9 update: the first pushed three-OS matrix run (`26011511225`) executed Ubuntu, Windows, and macOS jobs but failed correctly at the threshold gate because the deterministic CI mock emitted placeholder values against the strict fintech schema.
+- Root cause fixed in commit `e2242f5` on branch `enterprise-evidence-matrix-ci`: local mock output now handles required strict schema constructs and fintech expected semantics, and regression coverage proves the CI benchmark is schema/semantic valid.
+- Local validation after the fix: focused CI/external tests `11 passed`; CI artifact completeness assertion `PASS`; full repository suite `214 passed, 10 skipped`.
+- New GitHub Actions matrix run `26011688420` is launched. Remaining request: after it completes, download the three OS artifacts and run `python scripts/assert_remote_ci_matrix_evidence.py --artifacts-dir benchmarks/results/remote_ci_artifacts --out benchmarks/results/remote_ci_matrix_evidence.json`.
+- Readiness label remains unchanged until the downloaded remote matrix artifact validator passes.

@@ -219,6 +219,14 @@
 - Gate 8 is now pass for Azure provider pilot evidence, but broader cross-provider replications remain pending.
 - Readiness label remains **PRODUCT READY for audited developer/software scope** until remote three-OS CI matrix evidence, broader passing provider/OSS/HPC matrix evidence, and formal compliance/security review are complete.
 
+## 2026-05-18 remote matrix CI fix update
+
+- The first updated GitHub three-OS matrix run (`26011511225`) reached Ubuntu, Windows, and macOS runners but failed at `mbs gate` because the deterministic CI mock was not strict-schema aware.
+- Fixed the deterministic CI benchmark path in commit `e2242f5` by adding schema-aware mock handling for `const`, transaction ID patterns, required arrays, bounded numeric values, and fintech risk/decision semantics.
+- Added regression coverage for the strict fintech CI benchmark and revalidated locally: focused CI/external tests `11 passed`, CI artifact assertion `PASS`, full suite `214 passed, 10 skipped`.
+- Launched replacement GitHub Actions matrix run `26011688420`; remote three-OS matrix evidence remains pending until artifacts are downloaded and `scripts/assert_remote_ci_matrix_evidence.py` passes.
+- Current readiness label remains **PRODUCT READY for audited developer/software scope**.
+
 ## Required score for ENTERPRISE PILOT READY
 
 - Gates 1-6: pass.

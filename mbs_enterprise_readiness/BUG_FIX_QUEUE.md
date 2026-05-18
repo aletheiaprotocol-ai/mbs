@@ -199,9 +199,8 @@
 - Generated local request artifacts proving the boundary: remote CI artifact validator currently `FAIL` because artifacts are absent, and serious-workflow provider plan is `NO_EVIDENCE_DRY_RUN` until response JSONL is provided.
 - Validation: focused external/CI/package tests passed (`12 passed`); full local repository validation passed (`212 passed, 10 skipped`).
 
-## Direct external evidence execution update — 2026-05-18
+## Direct external evidence execution update â€” 2026-05-18
 
-- Confirmed GitHub CLI, Azure CLI, and Leonardo SSH access are usable from the agent environment.
 - Triggered GitHub Actions run `26011084310`; it completed `success` and downloaded artifacts validate as legacy Ubuntu remote CI evidence with `scripts/assert_legacy_remote_ci_evidence.py`.
 - Added `scripts/assert_legacy_remote_ci_evidence.py` and tests so successful one-artifact Ubuntu CI runs are recorded honestly without claiming Windows/macOS matrix evidence.
 - Collected real Azure Sweden `gpt-5.5`/`gpt-5.5-2` serious workflow provider responses through `scripts/collect_azure_openai_responses.py`.
@@ -209,3 +208,11 @@
 - Built passing Azure serious-workflow provider evidence at `benchmarks/results/serious_workflow_provider_evidence_azure_pass_candidate/manifest.json`: incident response, fintech transaction risk, and support ticket triage all `PASS`.
 - Validation: focused external/product/release tests passed (`102 passed`); full local repository validation passed (`213 passed, 10 skipped`).
 - Remaining bug/evidence boundary: remote three-OS matrix artifacts still require the updated workflow to be pushed and run; broader OSS/HPC/closed-provider passing matrix and formal compliance/security review remain open.
+
+## Remote CI matrix fix update â€” 2026-05-18
+
+- Reproduced the new GitHub matrix failure locally: `benchmarks/models.yaml` exercised the generic deterministic mock against the strict fintech transaction-risk schema, causing schema/semantic gate failure with placeholder values.
+- Fixed the deterministic local mock to honor schema `const`, known transaction ID `pattern`, `minItems`, bounded numeric fields, and explicit fintech risk/decision semantics with simple negation handling.
+- Added regression coverage proving the strict fintech CI benchmark produces schema-valid and semantically correct outputs for all eight cases.
+- Validation: focused CI/external tests passed (`11 passed`); local CI artifact assertion passed; full local repository validation passed (`214 passed, 10 skipped`).
+- Pushed branch `enterprise-evidence-matrix-ci` commit `e2242f5` and launched GitHub Actions matrix run `26011688420`; remote artifact validation remains pending until the run completes and artifacts are downloaded.
