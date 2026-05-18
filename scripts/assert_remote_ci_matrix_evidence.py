@@ -33,7 +33,8 @@ def inspect_remote_ci_artifacts(artifacts_dir: Path) -> dict[str, Any]:
             artifacts_dir / f"mbs-ci-artifacts-{os_name}-py3.11",
             artifacts_dir / os_name,
         ]
-        root = next((path for path in candidates if path.exists()), candidates[0])
+        artifact_root = next((path for path in candidates if path.exists()), candidates[0])
+        root = _resolve_results_root(artifact_root)
         missing = [name for name in REQUIRED_FILES if not (root / name).exists()]
         gate = _read_json(root / "ci_gate.json")
         evidence_manifest = _read_json(root / "evidence_pack_ci" / "manifest.json")
@@ -43,6 +44,7 @@ def inspect_remote_ci_artifacts(artifacts_dir: Path) -> dict[str, Any]:
         row = {
             "os": os_name,
             "artifact_root": str(root),
+            "downloaded_artifact_root": str(artifact_root),
             "missing_files": missing,
             "ci_gate_status": gate.get("status"),
             "evidence_pack_gate_status": evidence_manifest.get("checks", {}).get("gate_status"),
@@ -108,6 +110,13 @@ def _read_json(path: Path) -> dict[str, Any]:
         return {}
     data = json.loads(path.read_text(encoding="utf-8-sig"))
     return data if isinstance(data, dict) else {}
+
+
+def _resolve_results_root(artifact_root: Path) -> Path:
+    preserved_results_root = artifact_root / "benchmarks" / "results"
+    if preserved_results_root.exists():
+        return preserved_results_root
+    return artifact_root
 
 
 if __name__ == "__main__":

@@ -33,6 +33,27 @@ def test_remote_ci_matrix_evidence_accepts_three_complete_os_artifacts(tmp_path)
     assert [row["os"] for row in result["rows"]] == ["ubuntu-latest", "windows-latest", "macos-latest"]
 
 
+def test_remote_ci_matrix_evidence_accepts_github_preserved_artifact_paths(tmp_path):
+    for os_name in ["ubuntu-latest", "windows-latest", "macos-latest"]:
+        root = tmp_path / f"mbs-ci-artifacts-{os_name}-py3.11" / "benchmarks" / "results"
+        (root / "ci_report.md").parent.mkdir(parents=True, exist_ok=True)
+        (root / "ci_report.md").write_text("ok", encoding="utf-8")
+        _write_json(root / "ci_bench.json", {"summary": {"runs": 1}})
+        _write_json(root / "ci_gate.json", {"status": "PASS"})
+        _write_json(
+            root / "ci_environment.json",
+            {"status": "PASS", "evidence_type": "ci_environment_manifest", "runner_os": os_name},
+        )
+        _write_json(root / "evidence_pack_ci" / "manifest.json", {"checks": {"gate_status": "PASS"}})
+        _write_json(root / "nested_tool_fixture_pack" / "manifest.json", {"status": "PASS"})
+        _write_json(root / "multi_schema_fixture_bundle" / "manifest.json", {"status": "PASS"})
+
+    result = inspect_remote_ci_artifacts(tmp_path)
+
+    assert result["status"] == "PASS"
+    assert all(Path(row["artifact_root"]).parts[-2:] == ("benchmarks", "results") for row in result["rows"])
+
+
 def test_remote_ci_matrix_evidence_fails_when_os_artifact_missing(tmp_path):
     result = inspect_remote_ci_artifacts(tmp_path)
 

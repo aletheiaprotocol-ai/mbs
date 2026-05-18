@@ -216,3 +216,6 @@
 - Added regression coverage proving the strict fintech CI benchmark produces schema-valid and semantically correct outputs for all eight cases.
 - Validation: focused CI/external tests passed (`11 passed`); local CI artifact assertion passed; full local repository validation passed (`214 passed, 10 skipped`).
 - Pushed branch `enterprise-evidence-matrix-ci` commit `e2242f5` and launched GitHub Actions matrix run `26011688420`; remote artifact validation remains pending until the run completes and artifacts are downloaded.
+- Run `26011688420` completed `success` on Ubuntu, Windows, and macOS. Downloaded artifacts validate with `scripts/assert_remote_ci_matrix_evidence.py` as `PASS` at `benchmarks/results/remote_ci_matrix_evidence_26011688420.json`.
+- Patched the remote CI artifact validator to handle GitHub downloads that preserve the uploaded `benchmarks/results/` path under each artifact root, and added regression coverage for that layout.
+- Validation after remote artifact proof: focused external/CI tests passed (`8 passed`); full local repository validation passed (`215 passed, 10 skipped`).

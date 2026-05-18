@@ -135,3 +135,12 @@
 - Boundary: the successful GitHub run used the old remote `main` workflow and is Ubuntu-only legacy proof. It does not close the three-OS matrix blocker until the updated matrix workflow is pushed/rerun and `scripts/assert_remote_ci_matrix_evidence.py` passes on Ubuntu/Windows/macOS artifacts.
 - Validation after updates: focused external/product/release tests `102 passed`; full repository suite `213 passed, 10 skipped`.
 - Readiness label remains **PRODUCT READY for audited developer/software scope** until remote three-OS CI matrix evidence, broader passing provider/OSS/HPC matrix evidence, and formal compliance/security review are complete.
+
+## May 18, 2026 remote three-OS CI evidence update
+
+- Fixed the deterministic CI benchmark failure that blocked the first three-OS run (`26011511225`) by making the local mock strict-schema/fintech aware and regression-testing the strict fintech CI benchmark.
+- GitHub Actions matrix run `26011688420` completed `success` on Ubuntu, Windows, and macOS.
+- Downloaded artifacts validate as `PASS` with `scripts/assert_remote_ci_matrix_evidence.py`; evidence summary written to `benchmarks/results/remote_ci_matrix_evidence_26011688420.json`.
+- Patched the remote CI validator to accept GitHub downloads that preserve uploaded `benchmarks/results/` paths under each artifact root.
+- Validation after remote artifact proof: focused external/CI tests `8 passed`; full repository suite `215 passed, 10 skipped`.
+- Remote three-OS CI matrix evidence is now complete for the current branch evidence package. Remaining blockers: broader passing provider/OSS/HPC matrix evidence and formal compliance/security review.
