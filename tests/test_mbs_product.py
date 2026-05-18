@@ -5,7 +5,7 @@ from pathlib import Path
 
 from mbs import call_agent_tool, check, handle_agent_tool_request, list_agent_tools, report_cost, validate_output
 from mbs.adapter import adapt_response_jsonl, make_response_template
-from mbs.bench import run_benchmark_matrix
+from mbs.bench import mock_output, run_benchmark_matrix, run_cases, summarize
 from mbs.cli import main
 from mbs.compare import compare_results, format_compare
 from mbs.demo import build_demo, run_sample_benchmark
@@ -2345,6 +2345,27 @@ def test_benchmark_matrix_summarizes_models_styles_and_languages(tmp_path):
     assert result["summary"]["schema_valid_rate"] == 1.0
     assert {row["model"] for row in result["rows"]} == {"mock", "mock_retry"}
     assert all(row["language"] == "in=ar;out=ar;contract=en" for row in result["rows"])
+
+
+def test_local_mock_generates_valid_strict_fintech_ci_outputs():
+    root = Path(__file__).resolve().parents[1]
+    schema = json.loads((root / "examples" / "fintech_transaction_risk" / "schema.json").read_text(encoding="utf-8"))
+    cases = [
+        json.loads(line)
+        for line in (root / "examples" / "fintech_transaction_risk" / "cases.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
+
+    rows = run_cases(schema, cases, model="mock", decoding_mode="local_mock")
+
+    assert summarize(rows)["schema_valid_rate"] == 1.0
+    assert summarize(rows)["semantic_correct_rate"] == 1.0
+    for case in cases:
+        output = mock_output(schema, case["input"])
+        for key, value in case["expected_valid_outputs"].items():
+            assert output[key] == value
 
 
 def test_cli_bench_accepts_models_yaml(tmp_path, capsys):
