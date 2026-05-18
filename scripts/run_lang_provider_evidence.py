@@ -147,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
             raise subprocess.CalledProcessError(completed.returncode, command, output=completed.stdout, stderr=completed.stderr)
 
     manifest_path = out_dir / "manifest.json"
-    manifest: dict[str, Any] = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
+    manifest: dict[str, Any] = json.loads(manifest_path.read_text(encoding="utf-8-sig")) if manifest_path.exists() else {}
     run_manifest = {
         "status": manifest.get("status", "FAIL"),
         "run_plan": "run_plan.json",

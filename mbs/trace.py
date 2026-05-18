@@ -8,6 +8,7 @@ import uuid
 from typing import Any
 
 from .compiler import canonical_json, sha256_text
+from ._version import __version__
 
 
 def create_trace(
@@ -17,7 +18,7 @@ def create_trace(
     input_text: str = "",
     output: Any = None,
     model: str = "unknown",
-    mbs_version: str = "0.1.0",
+    mbs_version: str = __version__,
     validator_version: str = "json_schema_v1",
     output_tokens: int = 0,
 ) -> dict[str, Any]:
@@ -36,6 +37,7 @@ def create_trace(
         "validator_version": validator_version,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "status": status,
+        "failure_reason": validation.get("failure_reason"),
         "errors": validation.get("errors", []),
         "tokens": _tokens_from_contract(contract, output_tokens=output_tokens),
     }

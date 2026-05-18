@@ -28,9 +28,9 @@ def test_nested_retry_matrix_outputs_required_strategies_and_metrics(tmp_path):
     assert manifest["checks"]["improved_rows"] > 0
 
     strategies = matrix["strategies"]
-    assert strategies["no_retry"]["summary"]["semantic_correct_rate"] == 0.16
+    assert strategies["no_retry"]["summary"]["semantic_correct_rate"] == 0.2
     assert strategies["format_retry"]["summary"]["schema_valid_rate"] == 1.0
-    assert strategies["semantic_retry"]["summary"]["semantic_correct_rate"] == 0.8
+    assert strategies["semantic_retry"]["summary"]["semantic_correct_rate"] == 0.84
     assert strategies["mbs_retry"]["summary"]["semantic_correct_rate"] == 1.0
     assert strategies["best_of_retry"]["summary"]["semantic_correct_rate"] == 1.0
 

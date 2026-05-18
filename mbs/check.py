@@ -26,6 +26,10 @@ def check(
     trace = create_trace(schema_dict, contract, validation, input_text=input, model=model, output_tokens=output_tokens)
     return {
         "status": validation["status"],
+        "failure_reason": validation.get("failure_reason"),
+        "trace_id": trace["trace_id"],
+        "schema_hash": trace["schema_hash"],
+        "contract_hash": trace["contract_hash"],
         "output": validation["output"],
         "validation": validation,
         "trace": trace,

@@ -147,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def _rows_for_case_file(schema: dict[str, Any], case_file: Path) -> list[dict[str, Any]]:
     rows = []
-    for line in case_file.read_text(encoding="utf-8").splitlines():
+    for line in case_file.read_text(encoding="utf-8-sig").splitlines():
         if not line.strip():
             continue
         case = json.loads(line)

@@ -194,6 +194,8 @@ def test_agent_tools_expose_json_callable_check():
     )
 
     assert {"mbs.compile", "mbs.validate", "mbs.check", "mbs.trace", "mbs.cost"} <= names
+    assert {tool["contract_version"] for tool in tools} == {"mbs-agent-tools/v1"}
+    assert {tool["stability"] for tool in tools} == {"stable"}
     assert result["status"] == "PASS"
     assert result["trace"]["model"] == "agent-runtime"
     assert result["trace"]["trace_id"].startswith("mbs_trace_")
@@ -210,9 +212,239 @@ def test_agent_tool_request_supports_validate():
         }
     )
 
+    assert response["ok"] is True
     assert response["tool"] == "mbs.validate"
+    assert response["contract_version"] == "mbs-agent-tools/v1"
+    assert response["mbs_version"] == "0.1.1"
+    assert response["error"] is None
     assert response["result"]["schema_valid"] is False
     assert response["result"]["errors"][0]["type"] == "invented_enum"
+
+
+def test_agent_tool_cli_returns_stable_error_envelope_for_bad_request(capsys):
+    exit_code = main(["agent-tools", "--call", "mbs.unknown", "--args", "{}", "--json"])
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+
+    assert exit_code == 2
+    assert payload["ok"] is False
+    assert payload["tool"] == "mbs.unknown"
+    assert payload["contract_version"] == "mbs-agent-tools/v1"
+    assert payload["mbs_version"] == "0.1.1"
+    assert payload["result"] is None
+    assert payload["error"]["type"] == "AgentToolError"
+    assert payload["error"]["retryable"] is False
+    assert "Traceback" not in captured.out
+    assert "Traceback" not in captured.err
+
+
+def test_agent_tools_support_bom_output_path_and_controlled_missing_file(tmp_path):
+    schema_path = tmp_path / "schema.json"
+    output_path = tmp_path / "output_bom.json"
+    missing_output_path = tmp_path / "missing_output.json"
+    schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")
+    output_path.write_text(
+        "\ufeff" + json.dumps({"decision": "REVIEW", "risk_level": "HIGH", "reason": "manual review"}),
+        encoding="utf-8",
+    )
+
+    result = call_agent_tool("mbs.validate", {"schema_path": str(schema_path), "output_path": str(output_path)})
+
+    assert result["status"] == "PASS"
+    assert result["schema_valid"] is True
+
+    try:
+        call_agent_tool("mbs.validate", {"schema_path": str(schema_path), "output_path": str(missing_output_path)})
+    except Exception as exc:
+        assert "output file not found" in str(exc)
+        assert "Traceback" not in str(exc)
+    else:
+        raise AssertionError("missing output_path should fail")
+
+
+def test_agent_transaction_workflow_fixture_exposes_pass_fail_trace_and_tooling(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    workflow_dir = root / "examples" / "agent_workflow_transaction_review"
+    schema_path = workflow_dir / "schema.json"
+    good_output = workflow_dir / "candidate_good.json"
+    bad_output = workflow_dir / "candidate_bad.json"
+    trace_path = tmp_path / "trace_good.json"
+
+    assert main(["validate", "--schema", str(schema_path), "--output", str(good_output), "--json"]) == 0
+    assert main(["validate", "--schema", str(schema_path), "--output", str(bad_output), "--json"]) == 2
+    assert (
+        main(
+            [
+                "check",
+                "--schema",
+                str(schema_path),
+                "--input",
+                "Transaction TXN-41002: 4800 EUR to a new beneficiary.",
+                "--output",
+                str(good_output),
+                "--model",
+                "transaction-review-agent",
+                "--trace-out",
+                str(trace_path),
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    trace = json.loads(trace_path.read_text(encoding="utf-8"))
+    bad = call_agent_tool("mbs.check", {"schema_path": str(schema_path), "output_path": str(bad_output)})
+
+    assert trace["trace_id"].startswith("mbs_trace_")
+    assert trace["status"] == "PASS"
+    assert bad["status"] == "FAIL"
+    assert bad["failure_reason"] == "pattern_mismatch"
+    assert any(error["type"] == "invented_enum" for error in bad["validation"]["errors"])
+
+
+def test_public_cli_command_matrix_covers_core_success_paths(tmp_path, capsys):
+    schema_path = tmp_path / "schema.json"
+    output_path = tmp_path / "output.json"
+    cases_path = tmp_path / "cases.jsonl"
+    records_path = tmp_path / "records.jsonl"
+    results_path = tmp_path / "results.json"
+    gate_config = tmp_path / "gate.yaml"
+    responses_path = tmp_path / "responses.jsonl"
+    baseline_path = tmp_path / "baseline.json"
+    current_path = tmp_path / "current.json"
+    retry_path = tmp_path / "retry.json"
+    expected_models = tmp_path / "models.txt"
+    trace_out = tmp_path / "nested" / "trace.json"
+    bench_out = tmp_path / "bench.json"
+    test_out = tmp_path / "test.json"
+    report_out = tmp_path / "report.md"
+    gate_out = tmp_path / "gate.json"
+    evidence_dir = tmp_path / "evidence"
+    compare_out = tmp_path / "compare.json"
+    retry_out = tmp_path / "retry_audit.json"
+    triage_out = tmp_path / "triage.json"
+    adapted_out = tmp_path / "adapted.json"
+    template_out = tmp_path / "template.jsonl"
+    model_out = tmp_path / "model_ids.txt"
+    schemas_dir = tmp_path / "schemas"
+    schemas_dir.mkdir()
+
+    schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")
+    (schemas_dir / "schema.json").write_text(json.dumps(SCHEMA), encoding="utf-8")
+    output_path.write_text(
+        json.dumps({"decision": "REVIEW", "risk_level": "HIGH", "reason": "manual review"}),
+        encoding="utf-8",
+    )
+    cases_path.write_text(
+        json.dumps(
+            {
+                "id": "case-1",
+                "input": "high risk transfer",
+                "expected_valid_outputs": {"risk_level": "HIGH"},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    records_path.write_text(json.dumps({"schema_valid": True, "tokens": {"output": 8}}) + "\n", encoding="utf-8")
+    responses_path.write_text(
+        json.dumps(
+            {
+                "id": "case-1",
+                "output": {"decision": "REVIEW", "risk_level": "HIGH", "reason": "manual review"},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    result_payload = {
+        "schema": str(schema_path),
+        "model": "matrix-model",
+        "summary": {
+            "runs": 1,
+            "schema_valid_rate": 1.0,
+            "semantic_correct_rate": 1.0,
+                "valid_json_rate": 1.0,
+            "clean_json_rate": 1.0,
+        },
+        "rows": [
+            {
+                "case_id": "case-1",
+                "model": "matrix-model",
+                "schema_valid": True,
+                "json_valid": True,
+                "semantic_correct": True,
+                "trace": {"trace_id": "mbs_trace_matrix", "tokens": {"output": 8}},
+            }
+        ],
+    }
+    results_path.write_text(json.dumps(result_payload), encoding="utf-8")
+    baseline_path.write_text(json.dumps(result_payload), encoding="utf-8")
+    current_path.write_text(json.dumps(result_payload), encoding="utf-8")
+    gate_config.write_text(
+        "thresholds:\n  min_schema_valid_rate: 1.0\n  min_semantic_correct_rate: 1.0\n  min_clean_json_rate: 1.0\n",
+        encoding="utf-8",
+    )
+    retry_path.write_text(
+        json.dumps(
+            {
+                "model": "matrix-model",
+                "rows": [
+                    {
+                        "case_id": "retry-1",
+                        "retry_count": 1,
+                        "attempts": [
+                            {"attempt": 0, "json_valid": True, "schema_valid": False, "semantic_correct": False},
+                            {"attempt": 1, "selected": True, "json_valid": True, "schema_valid": True, "semantic_correct": True},
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    expected_models.write_text("matrix-model\n", encoding="utf-8")
+
+    commands = [
+        ["compile", str(schema_path), "--json"],
+        ["validate", "--schema", str(schema_path), "--output", str(output_path), "--json"],
+        ["check", "--schema", str(schema_path), "--input", "high risk transfer", "--output", str(output_path), "--trace-out", str(trace_out), "--json"],
+        ["trace", "--schema", str(schema_path), "--output", str(output_path), "--out", str(trace_out)],
+        ["cost", "--results", str(records_path), "--json"],
+        ["bench", "--schema", str(schema_path), "--cases", str(cases_path), "--out", str(bench_out), "--json"],
+        ["demo", "--json"],
+        ["test", "--schemas", str(schemas_dir), "--cases", str(cases_path), "--out", str(test_out), "--json"],
+        ["lang", str(schema_path), "--input-language", "en", "--output-language", "en", "--json"],
+        ["report", "--results", str(results_path), "--out", str(report_out), "--json"],
+        ["gate", "--results", str(results_path), "--config", str(gate_config), "--out", str(gate_out), "--json"],
+        ["evidence-pack", "--results", str(results_path), "--out-dir", str(evidence_dir), "--classification", "fixture", "--copy-results", "--json"],
+        ["compare", "--baseline", str(baseline_path), "--current", str(current_path), "--out", str(compare_out), "--json"],
+        ["retry-audit", "--results", str(retry_path), "--out", str(retry_out), "--json"],
+        ["models", "--min-models", "1", "--min-families", "1", "--min-size-bands", "1", "--out", str(model_out), "--json"],
+        ["triage", "--results", str(results_path), "--expected-models", str(expected_models), "--out", str(triage_out), "--json"],
+        ["agent-tools", "--list", "--json"],
+        ["agent-tools", "--call", "mbs.validate", "--args", json.dumps({"schema_path": str(schema_path), "output_path": str(output_path)}), "--json"],
+        ["adapt-responses", "--schema", str(schema_path), "--cases", str(cases_path), "--responses", str(responses_path), "--out", str(adapted_out), "--json"],
+        ["make-response-template", "--cases", str(cases_path), "--out", str(template_out), "--json"],
+    ]
+
+    for argv in commands:
+        assert main(argv) == 0, argv
+        captured = capsys.readouterr()
+        assert "Traceback" not in captured.out
+        assert "Traceback" not in captured.err
+
+    assert trace_out.exists()
+    assert bench_out.exists()
+    assert report_out.exists()
+    assert gate_out.exists()
+    assert (evidence_dir / "manifest.json").exists()
+    assert compare_out.exists()
+    assert retry_out.exists()
+    assert triage_out.exists()
+    assert adapted_out.exists()
+    assert template_out.exists()
+    assert model_out.exists()
 
 
 def test_adapt_response_jsonl_creates_traceable_rows(tmp_path):
@@ -343,6 +575,454 @@ def test_cli_adapt_responses_writes_reportable_result(tmp_path, capsys):
     assert written["rows"][0]["trace"]["model"] == "provider-x"
 
 
+def test_cli_json_readers_accept_windows_bom_and_crlf(tmp_path, capsys):
+    schema_path = tmp_path / "schema_bom.json"
+    output_path = tmp_path / "output_bom.json"
+    records_path = tmp_path / "records_bom.jsonl"
+    gate_config = tmp_path / "gate_bom.yaml"
+    result_path = tmp_path / "result_bom.json"
+
+    schema_path.write_text("\ufeff" + json.dumps(SCHEMA).replace(", ", ",\r\n"), encoding="utf-8")
+    output_path.write_text(
+        "\ufeff" + json.dumps({"decision": "REVIEW", "risk_level": "HIGH", "reason": "manual review"}),
+        encoding="utf-8",
+    )
+    records_path.write_text(
+        "\ufeff" + json.dumps({"schema_valid": True, "tokens": {"output": 10}}) + "\r\n",
+        encoding="utf-8",
+    )
+    result_path.write_text(
+        "\ufeff"
+        + json.dumps(
+            {
+                "schema": str(schema_path),
+                "model": "bom-model",
+                "summary": {
+                    "runs": 1,
+                    "schema_valid_rate": 1.0,
+                    "semantic_correct_rate": 1.0,
+                    "clean_json_rate": 1.0,
+                },
+                "rows": [
+                    {
+                        "case_id": "bom-case",
+                        "schema_valid": True,
+                        "json_valid": True,
+                        "semantic_correct": True,
+                        "trace": {"trace_id": "mbs_trace_bom", "tokens": {"output": 10}},
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    gate_config.write_text(
+        "\ufeffthresholds:\r\n  min_schema_valid_rate: 1.0\r\n  min_semantic_correct_rate: 1.0\r\n  min_clean_json_rate: 1.0\r\n",
+        encoding="utf-8",
+    )
+
+    assert main(["validate", "--schema", str(schema_path), "--output", str(output_path), "--json"]) == 0
+    validate_payload = json.loads(capsys.readouterr().out)
+    assert validate_payload["status"] == "PASS"
+
+    assert main(["cost", "--results", str(records_path), "--json"]) == 0
+    cost_payload = json.loads(capsys.readouterr().out)
+    assert cost_payload["valid_outputs"] == 1
+
+    assert main(["report", "--results", str(result_path), "--json"]) == 0
+    report_payload = json.loads(capsys.readouterr().out)
+    assert report_payload["summary"]["traceable_case_rows"] == 1
+
+    assert main(["gate", "--results", str(result_path), "--config", str(gate_config), "--json"]) == 0
+    gate_payload = json.loads(capsys.readouterr().out)
+    assert gate_payload["status"] == "PASS"
+
+
+def test_cli_invalid_json_file_returns_controlled_error(tmp_path, capsys):
+    schema_path = tmp_path / "schema.json"
+    bad_output_path = tmp_path / "bad_output.json"
+    schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")
+    bad_output_path.write_text('{"decision": "REVIEW",', encoding="utf-8")
+
+    assert main(["validate", "--schema", str(schema_path), "--output", str(bad_output_path), "--json"]) == 2
+    captured = capsys.readouterr()
+
+    assert captured.out == ""
+    assert "MBS input error: invalid JSON" in captured.err
+    assert "bad_output.json" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_cli_validate_routine_file_mistakes_do_not_traceback(tmp_path, capsys):
+    schema_path = tmp_path / "schema.json"
+    invalid_schema_path = tmp_path / "invalid_schema.json"
+    missing_schema_path = tmp_path / "missing_schema.json"
+    missing_output_path = tmp_path / "missing_output.json"
+
+    schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")
+    invalid_schema_path.write_text(json.dumps(["not", "a", "schema", "object"]), encoding="utf-8")
+
+    cases = [
+        (
+            ["validate", "--schema", str(missing_schema_path), "--output", "{}", "--json"],
+            "schema file not found",
+        ),
+        (
+            ["validate", "--schema", str(schema_path), "--output", str(missing_output_path), "--json"],
+            "JSON file not found",
+        ),
+        (
+            ["validate", "--schema", str(invalid_schema_path), "--output", "{}", "--json"],
+            "schema must be a JSON object",
+        ),
+    ]
+
+    for argv, expected in cases:
+        assert main(argv) == 2
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert "MBS input error:" in captured.err
+        assert expected in captured.err
+        assert "Traceback" not in captured.err
+
+
+def test_cli_json_outputs_include_agent_contract_fields(tmp_path, capsys):
+    schema_path = tmp_path / "schema.json"
+    valid_output_path = tmp_path / "valid_output.json"
+    invalid_output_path = tmp_path / "invalid_output.json"
+    schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")
+    valid_output_path.write_text(
+        json.dumps({"decision": "REVIEW", "risk_level": "HIGH", "reason": "manual review"}),
+        encoding="utf-8",
+    )
+    invalid_output_path.write_text(
+        json.dumps({"decision": "ALLOW", "risk_level": "LOW", "reason": "bad enum"}),
+        encoding="utf-8",
+    )
+
+    assert main(["validate", "--schema", str(schema_path), "--output", str(invalid_output_path), "--json"]) == 2
+    validate_payload = json.loads(capsys.readouterr().out)
+    assert validate_payload["status"] == "FAIL"
+    assert validate_payload["failure_reason"] == "invented_enum"
+
+    assert (
+        main(
+            [
+                "check",
+                "--schema",
+                str(schema_path),
+                "--output",
+                str(valid_output_path),
+                "--model",
+                "contract-model",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    check_payload = json.loads(capsys.readouterr().out)
+    assert check_payload["status"] == "PASS"
+    assert check_payload["failure_reason"] is None
+    assert check_payload["trace_id"].startswith("mbs_trace_")
+    assert check_payload["trace"]["trace_id"] == check_payload["trace_id"]
+    assert check_payload["trace"]["failure_reason"] is None
+    assert check_payload["schema_hash"].startswith("sha256:")
+    assert check_payload["contract_hash"].startswith("sha256:")
+
+    assert (
+        main(
+            [
+                "check",
+                "--schema",
+                str(schema_path),
+                "--output",
+                str(invalid_output_path),
+                "--model",
+                "contract-model",
+                "--json",
+            ]
+        )
+        == 2
+    )
+    invalid_check_payload = json.loads(capsys.readouterr().out)
+    assert invalid_check_payload["status"] == "FAIL"
+    assert invalid_check_payload["failure_reason"] == "invented_enum"
+    assert invalid_check_payload["trace"]["failure_reason"] == "invented_enum"
+
+
+def test_cli_trace_outputs_create_parent_directories(tmp_path):
+    schema_path = tmp_path / "schema.json"
+    output_path = tmp_path / "output.json"
+    trace_out_path = tmp_path / "nested" / "check" / "trace.json"
+    direct_trace_path = tmp_path / "nested" / "trace" / "trace.json"
+    schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")
+    output_path.write_text(
+        json.dumps({"decision": "REVIEW", "risk_level": "HIGH", "reason": "manual review"}),
+        encoding="utf-8",
+    )
+
+    assert (
+        main(
+            [
+                "check",
+                "--schema",
+                str(schema_path),
+                "--output",
+                str(output_path),
+                "--trace-out",
+                str(trace_out_path),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    assert main(["trace", "--schema", str(schema_path), "--output", str(output_path), "--out", str(direct_trace_path)]) == 0
+
+    assert json.loads(trace_out_path.read_text(encoding="utf-8"))["trace_id"].startswith("mbs_trace_")
+    assert json.loads(direct_trace_path.read_text(encoding="utf-8"))["trace_id"].startswith("mbs_trace_")
+
+
+def test_cli_routine_misuse_returns_controlled_errors(tmp_path, capsys):
+    bad_config_path = tmp_path / "bad_config.json"
+    list_config_path = tmp_path / "list_config.json"
+    bad_yaml_path = tmp_path / "bad_config.yaml"
+    bad_records_path = tmp_path / "bad_records.jsonl"
+    nonobject_records_path = tmp_path / "nonobject_records.jsonl"
+
+    bad_config_path.write_text('{"schema":', encoding="utf-8")
+    list_config_path.write_text(json.dumps(["not", "an", "object"]), encoding="utf-8")
+    bad_yaml_path.write_text("not a supported yaml line", encoding="utf-8")
+    bad_records_path.write_text('{"schema_valid": true\n', encoding="utf-8")
+    nonobject_records_path.write_text(json.dumps(["not-object"]) + "\n", encoding="utf-8")
+
+    stderr_cases = [
+        (["cost", "--json"], "mbs cost requires"),
+        (["bench", "--config", str(bad_config_path), "--json"], "invalid JSON"),
+        (["bench", "--config", str(list_config_path), "--json"], "MBS config must be"),
+        (["bench", "--config", str(bad_yaml_path), "--json"], ("Unsupported YAML config line", "MBS YAML config must be an object")),
+        (["cost", "--results", str(bad_records_path), "--json"], "invalid JSON"),
+        (["cost", "--results", str(nonobject_records_path), "--json"], "JSON array record must be an object"),
+        (["agent-tools", "--call", "mbs.validate", "--args", '["not", "object"]', "--json"], "MBS config must be"),
+    ]
+
+    for argv, expected in stderr_cases:
+        assert main(argv) == 2
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert "MBS input error:" in captured.err
+        if isinstance(expected, tuple):
+            assert any(item in captured.err for item in expected)
+        else:
+            assert expected in captured.err
+        assert "Traceback" not in captured.err
+
+    for argv, expected in [
+        (["agent-tools", "--call", "mbs.no_such_tool", "--json"], "Unknown MBS agent tool"),
+        (["agent-tools", "--request", '{"tool": "mbs.check"}', "--json"], "requires schema or schema_path"),
+    ]:
+        assert main(argv) == 2
+        captured = capsys.readouterr()
+        payload = json.loads(captured.out)
+        assert payload["ok"] is False
+        assert expected in payload["error"]["message"]
+        assert captured.err == ""
+        assert "Traceback" not in captured.out
+
+
+def test_cli_edge_command_matrix_returns_controlled_errors(tmp_path, capsys):
+    schema_path = tmp_path / "schema.json"
+    output_path = tmp_path / "output.json"
+    cases_path = tmp_path / "cases.jsonl"
+    result_path = tmp_path / "result.json"
+    empty_results_path = tmp_path / "empty_results.json"
+    bad_gate_config_path = tmp_path / "bad_gate.json"
+    registry_path = tmp_path / "registry.json"
+    template_path = tmp_path / "template.jsonl"
+    trace_out_path = tmp_path / "trace.json"
+
+    schema_path.write_text(json.dumps(SCHEMA), encoding="utf-8")
+    output_path.write_text(
+        json.dumps({"decision": "REVIEW", "risk_level": "HIGH", "reason": "manual review"}),
+        encoding="utf-8",
+    )
+    cases_path.write_text(json.dumps({"id": "case-1", "input": "review transfer"}) + "\n", encoding="utf-8")
+    result_path.write_text(
+        json.dumps(
+            {
+                "schema": str(schema_path),
+                "model": "edge-model",
+                "summary": {"runs": 1, "schema_valid_rate": 1.0, "semantic_correct_rate": 1.0, "clean_json_rate": 1.0},
+                "rows": [
+                    {
+                        "case_id": "case-1",
+                        "schema_valid": True,
+                        "json_valid": True,
+                        "semantic_correct": True,
+                        "trace": {"trace_id": "mbs_trace_edge", "tokens": {"output": 3}},
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    empty_results_path.write_text(json.dumps({"rows": []}), encoding="utf-8")
+    bad_gate_config_path.write_text(json.dumps(["not", "a", "config", "object"]), encoding="utf-8")
+    registry_path.write_text(json.dumps({"suites": {"tiny": []}, "models": {}}), encoding="utf-8")
+
+    cases = [
+        (["compile", str(tmp_path / "missing_schema.json"), "--json"], "schema file not found"),
+        (["check", "--schema", str(schema_path), "--output", str(tmp_path / "missing_output.json"), "--json"], "JSON file not found"),
+        (["trace", "--schema", str(schema_path), "--output", str(tmp_path / "missing_output.json"), "--out", str(trace_out_path)], "JSON file not found"),
+        (["cost", "--results", str(tmp_path / "missing_records.jsonl"), "--json"], "records file not found"),
+        (["bench", "--schema", str(schema_path), "--cases", str(tmp_path / "missing_cases.jsonl"), "--json"], "No such file"),
+        (["test", "--schemas", str(tmp_path / "missing_schemas"), "--cases", str(cases_path), "--json"], "no schema files found"),
+        (["lang", str(tmp_path / "missing_schema.json"), "--input-language", "en", "--output-language", "en", "--json"], "schema file not found"),
+        (["report", "--results", str(tmp_path / "missing_result.json"), "--json"], None),
+        (["gate", "--results", str(result_path), "--config", str(bad_gate_config_path), "--json"], "MBS gate config must be an object"),
+        (["evidence-pack", "--results", str(empty_results_path), "--out-dir", str(tmp_path / "evidence"), "--json"], "no result rows found"),
+        (["compare", "--baseline", str(tmp_path / "missing_base.json"), "--current", str(result_path), "--json"], None),
+        (["retry-audit", "--results", str(tmp_path / "missing_retry.json"), "--json"], "no retry result rows found"),
+        (["models", "--registry", str(registry_path), "--suite", "missing", "--json"], "Unknown model suite"),
+        (["triage", "--results", str(tmp_path / "missing_result.json"), "--json"], "no result rows found"),
+        (["adapt-responses", "--schema", str(schema_path), "--responses", str(tmp_path / "missing_responses.jsonl"), "--json"], "No such file"),
+        (["make-response-template", "--cases", str(tmp_path / "missing_cases.jsonl"), "--out", str(template_path), "--json"], "No such file"),
+    ]
+
+    for argv, expected in cases:
+        assert main(argv) == 2, argv
+        captured = capsys.readouterr()
+        if expected is None:
+            assert captured.out
+            assert captured.err == ""
+        else:
+            assert captured.out == ""
+            assert "MBS input error:" in captured.err
+            assert expected in captured.err
+        assert "Traceback" not in captured.err
+
+
+def test_cli_artifact_commands_accept_bom_encoded_inputs(tmp_path, capsys):
+    schema_path = tmp_path / "schema_bom.json"
+    cases_path = tmp_path / "cases_bom.jsonl"
+    responses_path = tmp_path / "responses_bom.jsonl"
+    baseline_path = tmp_path / "baseline_bom.json"
+    current_path = tmp_path / "current_bom.json"
+    retry_path = tmp_path / "retry_bom.json"
+    expected_models_path = tmp_path / "expected_models_bom.txt"
+    adapted_path = tmp_path / "adapted.json"
+    evidence_dir = tmp_path / "evidence"
+
+    schema_path.write_text("\ufeff" + json.dumps(SCHEMA), encoding="utf-8")
+    cases_path.write_text(
+        "\ufeff"
+        + json.dumps(
+            {
+                "id": "case-1",
+                "input": "high risk transfer",
+                "expected_valid_outputs": {"risk_level": "HIGH"},
+            }
+        )
+        + "\r\n",
+        encoding="utf-8",
+    )
+    responses_path.write_text(
+        "\ufeff"
+        + json.dumps(
+            {
+                "id": "case-1",
+                "output": {"decision": "REVIEW", "risk_level": "HIGH", "reason": "manual review"},
+            }
+        )
+        + "\r\n",
+        encoding="utf-8",
+    )
+
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(responses_path),
+                "--model",
+                "bom-provider",
+                "--out",
+                str(adapted_path),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    adapted_payload = json.loads(capsys.readouterr().out)
+    assert adapted_payload["summary"]["schema_valid_rate"] == 1.0
+
+    adapted_text = adapted_path.read_text(encoding="utf-8")
+    baseline_path.write_text("\ufeff" + adapted_text, encoding="utf-8")
+    current_path.write_text("\ufeff" + adapted_text, encoding="utf-8")
+    expected_models_path.write_text("\ufeffbom-provider\r\n", encoding="utf-8")
+    retry_path.write_text(
+        "\ufeff"
+        + json.dumps(
+            {
+                "model": "bom-provider",
+                "rows": [
+                    {
+                        "case_id": "retry-1",
+                        "retry_count": 1,
+                        "attempts": [
+                            {"attempt": 0, "json_valid": True, "schema_valid": False, "semantic_correct": False},
+                            {
+                                "attempt": 1,
+                                "selected": True,
+                                "json_valid": True,
+                                "schema_valid": True,
+                                "semantic_correct": True,
+                            },
+                        ],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert main(["compare", "--baseline", str(baseline_path), "--current", str(current_path), "--json"]) == 0
+    compare_payload = json.loads(capsys.readouterr().out)
+    assert compare_payload["status"] == "PASS"
+
+    assert main(["triage", "--results", str(current_path), "--expected-models", str(expected_models_path), "--json"]) == 0
+    triage_payload = json.loads(capsys.readouterr().out)
+    assert triage_payload["missing_models"] == []
+
+    assert main(["retry-audit", "--results", str(retry_path), "--json"]) == 0
+    retry_payload = json.loads(capsys.readouterr().out)
+    assert retry_payload["status"] == "PASS"
+    assert retry_payload["improved_rows"] == 1
+
+    assert (
+        main(
+            [
+                "evidence-pack",
+                "--results",
+                str(current_path),
+                "--out-dir",
+                str(evidence_dir),
+                "--classification",
+                "fixture",
+                "--copy-results",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    evidence_payload = json.loads(capsys.readouterr().out)
+    assert evidence_payload["checks"]["report_rows"] == 1
+    assert (evidence_dir / "manifest.json").exists()
+
+
 def test_public_adapter_fixture_supports_report_and_compare(tmp_path):
     root = Path(__file__).resolve().parents[1]
     schema_path = root / "examples" / "tool_argument_generation" / "schema.json"
@@ -461,6 +1141,306 @@ def test_provider_json_mode_fixture_supports_gate_and_evidence_pack(tmp_path):
     assert manifest["checks"]["gate_status"] == "PASS"
 
 
+def test_incident_response_workflow_pack_passes_and_fails_with_evidence(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    workflow_dir = root / "examples" / "incident_response_runbook"
+    schema_path = workflow_dir / "schema.json"
+    cases_path = workflow_dir / "cases.jsonl"
+    good_responses = workflow_dir / "provider_good_responses.jsonl"
+    bad_responses = workflow_dir / "provider_bad_responses.jsonl"
+    gate_config = root / "benchmarks" / "incident_response_gate.yaml"
+    good_out = tmp_path / "incident_good.mbs.json"
+    bad_out = tmp_path / "incident_bad.mbs.json"
+    pack_dir = tmp_path / "incident_evidence_pack"
+
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(good_responses),
+                "--model",
+                "incident-good-fixture",
+                "--decoding-mode",
+                "json_mode",
+                "--out",
+                str(good_out),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(bad_responses),
+                "--model",
+                "incident-bad-fixture",
+                "--decoding-mode",
+                "json_mode",
+                "--out",
+                str(bad_out),
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    good_payload = json.loads(good_out.read_text(encoding="utf-8"))
+    bad_payload = json.loads(bad_out.read_text(encoding="utf-8"))
+    bad_failure_types = {row["case_id"]: row["failure_type"] for row in bad_payload["rows"]}
+
+    assert good_payload["summary"]["runs"] == 8
+    assert good_payload["summary"]["schema_valid_rate"] == 1.0
+    assert good_payload["summary"]["semantic_correct_rate"] == 1.0
+    assert good_payload["summary"]["clean_json_rate"] == 1.0
+    assert main(["gate", "--results", str(good_out), "--config", str(gate_config), "--json"]) == 0
+    assert (
+        main(
+            [
+                "evidence-pack",
+                "--results",
+                str(good_out),
+                "--gate-config",
+                str(gate_config),
+                "--classification",
+                "fixture",
+                "--copy-results",
+                "--out-dir",
+                str(pack_dir),
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    manifest = json.loads((pack_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["classification"] == "fixture_smoke_not_provider_benchmark"
+    assert manifest["checks"]["gate_status"] == "PASS"
+    assert manifest["checks"]["report_rows"] == 1
+    assert (pack_dir / "raw_results" / "incident_good.mbs.json").exists()
+
+    assert bad_payload["summary"]["runs"] == 8
+    assert bad_payload["summary"]["schema_valid_rate"] < 0.6
+    assert bad_payload["summary"]["semantic_correct_rate"] < 0.5
+    assert bad_failure_types["ir_001"] == "semantic_mismatch"
+    assert bad_failure_types["ir_002"] == "invented_enum"
+    assert bad_failure_types["ir_003"] == "wrong_type"
+    assert bad_failure_types["ir_004"] == "extra_key"
+    assert bad_failure_types["ir_006"] == "const_mismatch"
+    assert main(["gate", "--results", str(bad_out), "--config", str(gate_config), "--json"]) == 2
+
+
+def test_fintech_transaction_risk_workflow_pack_passes_and_fails_with_evidence(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    workflow_dir = root / "examples" / "fintech_transaction_risk"
+    schema_path = workflow_dir / "schema.json"
+    cases_path = workflow_dir / "cases.jsonl"
+    good_responses = workflow_dir / "provider_good_responses.jsonl"
+    bad_responses = workflow_dir / "provider_bad_responses.jsonl"
+    gate_config = root / "benchmarks" / "fintech_transaction_risk_gate.yaml"
+    good_out = tmp_path / "fintech_good.mbs.json"
+    bad_out = tmp_path / "fintech_bad.mbs.json"
+    pack_dir = tmp_path / "fintech_evidence_pack"
+
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(good_responses),
+                "--model",
+                "fintech-good-fixture",
+                "--decoding-mode",
+                "json_mode",
+                "--out",
+                str(good_out),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(bad_responses),
+                "--model",
+                "fintech-bad-fixture",
+                "--decoding-mode",
+                "json_mode",
+                "--out",
+                str(bad_out),
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    good_payload = json.loads(good_out.read_text(encoding="utf-8"))
+    bad_payload = json.loads(bad_out.read_text(encoding="utf-8"))
+    bad_failure_types = {row["case_id"]: row["failure_type"] for row in bad_payload["rows"]}
+
+    assert good_payload["summary"]["runs"] == 8
+    assert good_payload["summary"]["schema_valid_rate"] == 1.0
+    assert good_payload["summary"]["semantic_correct_rate"] == 1.0
+    assert good_payload["summary"]["clean_json_rate"] == 1.0
+    assert main(["gate", "--results", str(good_out), "--config", str(gate_config), "--json"]) == 0
+    assert (
+        main(
+            [
+                "evidence-pack",
+                "--results",
+                str(good_out),
+                "--gate-config",
+                str(gate_config),
+                "--classification",
+                "fixture",
+                "--copy-results",
+                "--out-dir",
+                str(pack_dir),
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    manifest = json.loads((pack_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["classification"] == "fixture_smoke_not_provider_benchmark"
+    assert manifest["checks"]["gate_status"] == "PASS"
+    assert manifest["checks"]["report_rows"] == 1
+    assert (pack_dir / "raw_results" / "fintech_good.mbs.json").exists()
+
+    assert bad_payload["summary"]["runs"] == 8
+    assert bad_payload["summary"]["schema_valid_rate"] < 0.4
+    assert bad_payload["summary"]["semantic_correct_rate"] < 0.5
+    assert bad_failure_types["risk_001"] == "semantic_mismatch"
+    assert bad_failure_types["risk_002"] == "invented_enum"
+    assert bad_failure_types["risk_003"] == "wrong_type"
+    assert bad_failure_types["risk_004"] == "extra_key"
+    assert bad_failure_types["risk_008"] == "missing_required_key"
+    assert main(["gate", "--results", str(bad_out), "--config", str(gate_config), "--json"]) == 2
+
+
+def test_support_ticket_triage_workflow_pack_passes_and_fails_with_evidence(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    workflow_dir = root / "examples" / "support_ticket_triage"
+    schema_path = workflow_dir / "schema.json"
+    cases_path = workflow_dir / "cases.jsonl"
+    good_responses = workflow_dir / "provider_good_responses.jsonl"
+    bad_responses = workflow_dir / "provider_bad_responses.jsonl"
+    gate_config = root / "benchmarks" / "support_ticket_triage_gate.yaml"
+    good_out = tmp_path / "support_good.mbs.json"
+    bad_out = tmp_path / "support_bad.mbs.json"
+    pack_dir = tmp_path / "support_evidence_pack"
+
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(good_responses),
+                "--model",
+                "support-good-fixture",
+                "--decoding-mode",
+                "json_mode",
+                "--out",
+                str(good_out),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    assert (
+        main(
+            [
+                "adapt-responses",
+                "--schema",
+                str(schema_path),
+                "--cases",
+                str(cases_path),
+                "--responses",
+                str(bad_responses),
+                "--model",
+                "support-bad-fixture",
+                "--decoding-mode",
+                "json_mode",
+                "--out",
+                str(bad_out),
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    good_payload = json.loads(good_out.read_text(encoding="utf-8"))
+    bad_payload = json.loads(bad_out.read_text(encoding="utf-8"))
+    bad_failure_types = {row["case_id"]: row["failure_type"] for row in bad_payload["rows"]}
+
+    assert good_payload["summary"]["runs"] == 8
+    assert good_payload["summary"]["schema_valid_rate"] == 1.0
+    assert good_payload["summary"]["semantic_correct_rate"] == 1.0
+    assert good_payload["summary"]["clean_json_rate"] == 1.0
+    assert main(["gate", "--results", str(good_out), "--config", str(gate_config), "--json"]) == 0
+    assert (
+        main(
+            [
+                "evidence-pack",
+                "--results",
+                str(good_out),
+                "--gate-config",
+                str(gate_config),
+                "--classification",
+                "fixture",
+                "--copy-results",
+                "--out-dir",
+                str(pack_dir),
+                "--json",
+            ]
+        )
+        == 0
+    )
+
+    manifest = json.loads((pack_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["classification"] == "fixture_smoke_not_provider_benchmark"
+    assert manifest["checks"]["gate_status"] == "PASS"
+    assert manifest["checks"]["report_rows"] == 1
+    assert (pack_dir / "raw_results" / "support_good.mbs.json").exists()
+
+    assert bad_payload["summary"]["runs"] == 8
+    assert bad_payload["summary"]["schema_valid_rate"] < 0.5
+    assert bad_payload["summary"]["semantic_correct_rate"] < 0.5
+    assert bad_failure_types["support_001"] == "semantic_mismatch"
+    assert bad_failure_types["support_002"] == "invented_enum"
+    assert bad_failure_types["support_003"] == "wrong_type"
+    assert bad_failure_types["support_004"] == "extra_key"
+    assert bad_failure_types["support_008"] == "missing_required_key"
+    assert main(["gate", "--results", str(bad_out), "--config", str(gate_config), "--json"]) == 2
+
+
 def test_nested_tool_argument_fixtures_separate_schema_and_semantic_failures(tmp_path):
     root = Path(__file__).resolve().parents[1]
     schema_path = root / "examples" / "nested_tool_arguments" / "schema.json"
@@ -523,8 +1503,8 @@ def test_nested_tool_argument_fixtures_separate_schema_and_semantic_failures(tmp
     assert good_payload["summary"]["schema_valid_rate"] == 1.0
     assert good_payload["summary"]["semantic_correct_rate"] == 1.0
     assert bad_payload["summary"]["runs"] == 25
-    assert bad_payload["summary"]["schema_valid_rate"] == 0.68
-    assert bad_payload["summary"]["semantic_correct_rate"] == 0.16
+    assert bad_payload["summary"]["schema_valid_rate"] == 0.72
+    assert bad_payload["summary"]["semantic_correct_rate"] == 0.2
     assert {"field": "customer.verified", "type": "wrong_type", "expected": "boolean", "received": "str"} in first_bad_errors
     assert {"field": "actions[0].currency", "type": "missing_required_key"} in first_bad_errors
     assert {"field": "actions[0].amount", "type": "wrong_type", "expected": "number", "received": "str"} in first_bad_errors
@@ -532,7 +1512,7 @@ def test_nested_tool_argument_fixtures_separate_schema_and_semantic_failures(tmp
     assert bad_payload["rows"][1]["schema_valid"] is True
     assert bad_payload["rows"][1]["semantic_correct"] is False
     assert failure_types["nested_002"] == "semantic_mismatch"
-    assert failure_types["nested_003"] == "invalid_json"
+    assert failure_types["nested_003"] == "prose_wrapped_json"
     assert {"field": "customer.tier", "type": "extra_key"} in nested_004_errors
     assert {"field": "actions[0].memo", "type": "extra_key"} in nested_004_errors
     assert {"field": "debug", "type": "extra_key"} in nested_004_errors
@@ -588,7 +1568,7 @@ def test_nested_tool_fixture_pack_script_writes_evidence_packs(tmp_path, monkeyp
     assert manifest["checks"]["strict_extra_key_error_present"] is True
     assert manifest["checks"]["joined_enum_error_present"] is True
     assert manifest["checks"]["case_mismatch_error_present"] is True
-    assert manifest["checks"]["invalid_json_error_present"] is True
+    assert manifest["checks"]["prose_wrapped_json_warning_present"] is True
     assert manifest["checks"]["semantic_mismatch_present"] is True
     assert (tmp_path / "evidence_pack_good" / "manifest.json").exists()
     assert (tmp_path / "evidence_pack_bad" / "triage.json").exists()
@@ -678,6 +1658,83 @@ def test_nested_provider_runner_reuses_existing_responses(tmp_path, monkeypatch)
     assert evidence_manifest["checks"]["gate_status"] == "PASS"
     assert (out_dir / "run_plan.json").exists()
     assert (out_dir / "evidence_pack" / "manifest.json").exists()
+
+
+def test_nested_provider_runner_dry_run_uses_env_deployment_by_default(tmp_path, monkeypatch, capsys):
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "run_nested_provider_evidence.py"
+    spec = importlib.util.spec_from_file_location("run_nested_provider_evidence_dry_run", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    out_dir = tmp_path / "nested_provider_dry_run"
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_nested_provider_evidence.py",
+            "--root",
+            str(root),
+            "--out-dir",
+            str(out_dir),
+            "--model",
+            "display-model-label",
+            "--mode",
+            "tool_call",
+            "--classification",
+            "provider",
+            "--dry-run",
+            "--json",
+        ],
+    )
+
+    assert module.main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    collect_command = payload["commands"][0]
+
+    assert payload["status"] == "DRY_RUN"
+    assert "--deployment" not in collect_command
+    assert "--model" in collect_command
+    assert collect_command[collect_command.index("--model") + 1] == "display-model-label"
+    assert "--policy" in collect_command
+    assert collect_command[collect_command.index("--policy") + 1].endswith("examples\\nested_tool_arguments\\policy.md") or collect_command[
+        collect_command.index("--policy") + 1
+    ].endswith("examples/nested_tool_arguments/policy.md")
+
+
+def test_collect_azure_openai_responses_includes_policy_in_prompt(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    script_path = root / "scripts" / "collect_azure_openai_responses.py"
+    spec = importlib.util.spec_from_file_location("collect_azure_openai_responses", script_path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    schema = {"type": "object", "properties": {"tool": {"type": "string"}}, "required": ["tool"]}
+    case = {"input": "Verified customer asks for a refund."}
+    body = module.build_request(schema, case, "json_mode", max_tokens=64, seed=333, policy="Choose create_refund for valid refunds.")
+    user_message = body["messages"][1]["content"]
+
+    assert "Task policy:" in user_message
+    assert "Choose create_refund for valid refunds." in user_message
+    assert body["response_format"] == {"type": "json_object"}
+
+
+def test_provider_script_jsonl_loaders_accept_bom(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    cases_path = tmp_path / "cases_bom.jsonl"
+    cases_path.write_text("\ufeff" + json.dumps({"id": "case-1", "input": "hello"}) + "\r\n", encoding="utf-8")
+
+    for script_name in ["collect_azure_openai_responses.py", "collect_hf_local_responses.py", "make_tuning_dataset.py"]:
+        script_path = root / "scripts" / script_name
+        spec = importlib.util.spec_from_file_location(script_name.removesuffix(".py"), script_path)
+        assert spec and spec.loader
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        rows = module.load_jsonl(str(cases_path))
+
+        assert rows == [{"id": "case-1", "input": "hello"}]
 
 
 def test_nested_provider_runner_writes_manifest_on_gate_failure(tmp_path, monkeypatch):
@@ -843,12 +1900,12 @@ def test_nested_retry_matrix_reports_repair_policies(tmp_path, monkeypatch, caps
     assert payload["status"] == "PASS"
     assert payload["classification"] == "fixture_retry_matrix_not_provider_benchmark"
     assert payload["checks"]["case_count"] == 25
-    assert payload["checks"]["no_retry_schema_valid_rate"] == 0.68
-    assert payload["checks"]["no_retry_semantic_correct_rate"] == 0.16
+    assert payload["checks"]["no_retry_schema_valid_rate"] == 0.72
+    assert payload["checks"]["no_retry_semantic_correct_rate"] == 0.2
     assert payload["checks"]["mbs_retry_schema_valid_rate"] == 1.0
     assert payload["checks"]["mbs_retry_semantic_correct_rate"] == 1.0
     assert payload["checks"]["format_retry_schema_valid_rate"] == 1.0
-    assert payload["checks"]["semantic_retry_semantic_correct_rate"] == 0.8
+    assert payload["checks"]["semantic_retry_semantic_correct_rate"] == 0.84
     assert payload["checks"]["best_of_schema_valid_rate"] == 1.0
     assert payload["checks"]["best_of_semantic_correct_rate"] == 1.0
     assert payload["checks"]["selected_attempt_regressions"] == 0
@@ -1119,6 +2176,10 @@ def test_ci_artifact_checker_accepts_complete_fixture_outputs(tmp_path, monkeypa
     build_evidence_pack([ci_result], results_dir / "evidence_pack_ci", classification="ci", gate_config=gate_path, copy_results=True)
     (results_dir / "ci_report.md").write_text("# report\n", encoding="utf-8")
     (results_dir / "ci_gate.json").write_text(json.dumps({"status": "PASS"}), encoding="utf-8")
+    (results_dir / "ci_environment.json").write_text(
+        json.dumps({"status": "PASS", "evidence_type": "ci_environment_manifest", "runner_os": "local-test"}),
+        encoding="utf-8",
+    )
 
     nested_script_path = root / "scripts" / "run_nested_tool_fixture_pack.py"
     nested_spec = importlib.util.spec_from_file_location("run_nested_tool_fixture_pack_for_ci_check", nested_script_path)
@@ -1130,6 +2191,25 @@ def test_ci_artifact_checker_accepts_complete_fixture_outputs(tmp_path, monkeypa
         ["run_nested_tool_fixture_pack.py", "--root", str(root), "--out-dir", str(results_dir / "nested_tool_fixture_pack")],
     )
     assert nested_module.main() == 0
+
+    multi_schema_script_path = root / "scripts" / "run_multi_schema_fixture_bundle.py"
+    multi_schema_spec = importlib.util.spec_from_file_location(
+        "run_multi_schema_fixture_bundle_for_ci_check", multi_schema_script_path
+    )
+    assert multi_schema_spec and multi_schema_spec.loader
+    multi_schema_module = importlib.util.module_from_spec(multi_schema_spec)
+    multi_schema_spec.loader.exec_module(multi_schema_module)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_multi_schema_fixture_bundle.py",
+            "--root",
+            str(root),
+            "--out-dir",
+            str(results_dir / "multi_schema_fixture_bundle"),
+        ],
+    )
+    assert multi_schema_module.main() == 0
 
     checker_path = root / "scripts" / "assert_ci_artifacts.py"
     checker_spec = importlib.util.spec_from_file_location("assert_ci_artifacts", checker_path)
@@ -1639,6 +2719,27 @@ def test_gate_passes_clean_traceable_results(tmp_path):
     assert "All configured thresholds passed" in format_gate(result)
 
 
+def test_gate_and_report_fail_empty_result_sets(tmp_path, capsys):
+    empty_path = tmp_path / "empty.json"
+    empty_path.write_text(json.dumps({"summary": {"runs": 0}, "rows": []}), encoding="utf-8")
+
+    gate = evaluate_gate([empty_path])
+    gate_metrics = {failure["metric"] for failure in gate["failures"]}
+
+    assert gate["status"] == "FAIL"
+    assert gate["failure_reason"].startswith("gate_failed:")
+    assert "rows" in gate_metrics
+    assert "total_runs" in gate_metrics
+    assert main(["gate", "--results", str(empty_path), "--json"]) == 2
+    gate_payload = json.loads(capsys.readouterr().out)
+    assert gate_payload["status"] == "FAIL"
+    assert gate_payload["failure_reason"]
+
+    assert main(["report", "--results", str(empty_path), "--json"]) == 2
+    report_payload = json.loads(capsys.readouterr().out)
+    assert report_payload["summary"]["rows"] == 0
+
+
 def test_gate_fails_bad_metrics_and_missing_traces(tmp_path):
     result_path = tmp_path / "bench.json"
     result_path.write_text(
@@ -1660,6 +2761,7 @@ def test_gate_fails_bad_metrics_and_missing_traces(tmp_path):
     failed_metrics = {failure["metric"] for failure in result["failures"]}
 
     assert result["status"] == "FAIL"
+    assert result["failure_reason"].startswith("gate_failed:")
     assert "mean_schema_valid_rate" in failed_metrics
     assert "missing_trace_rows" in failed_metrics
     assert "trace_coverage" in failed_metrics
@@ -1848,6 +2950,31 @@ def test_cli_compare_returns_nonzero_on_regression(tmp_path, capsys):
 
     assert main(["compare", "--baseline", str(baseline), "--current", str(current), "--metric", "schema_valid_rate"]) == 2
     assert "Regression detected" in capsys.readouterr().out
+
+
+def test_compare_no_match_is_nonpassing_with_reason(tmp_path, capsys):
+    baseline = tmp_path / "baseline.json"
+    current = tmp_path / "current.json"
+    baseline.write_text(
+        json.dumps({"runs": [{"schema": "schema-a.json", "model": "mock-a", "schema_valid_rate": 1.0}]}),
+        encoding="utf-8",
+    )
+    current.write_text(
+        json.dumps({"runs": [{"schema": "schema-b.json", "model": "mock-b", "schema_valid_rate": 1.0}]}),
+        encoding="utf-8",
+    )
+
+    result = compare_results([baseline], [current])
+
+    assert result["status"] == "NO_MATCH"
+    assert result["reason"] == "no comparable metric rows matched between baseline and current results"
+    assert result["comparisons"] == []
+    assert "No comparable rows matched" in format_compare(result)
+
+    assert main(["compare", "--baseline", str(baseline), "--current", str(current), "--json"]) == 2
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "NO_MATCH"
+    assert payload["reason"]
 
 
 def test_retry_audit_passes_when_selected_attempt_improves(tmp_path):

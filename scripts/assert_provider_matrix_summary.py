@@ -12,7 +12,7 @@ REQUIRED_FAILURE_MODES = {"schema_clean_semantic_mismatch", "format_schema_failu
 
 
 def validate_summary(path: Path) -> dict[str, Any]:
-    summary = json.loads(path.read_text(encoding="utf-8"))
+    summary = json.loads(path.read_text(encoding="utf-8-sig"))
     failures: list[str] = []
 
     if summary.get("classification") != "provider":

@@ -9,8 +9,13 @@ on:
 jobs:
   structured-output-regression:
     name: Structured-output regression gate
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.11']
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,13 +23,31 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
 
       - name: Install package with test dependencies
         run: python -m pip install -e ".[test]"
 
+      - name: Install build tooling
+        run: python -m pip install build
+
       - name: Run unit and conformance tests
         run: python -m pytest -q
+
+      - name: Record CI environment evidence
+        run: python scripts/write_ci_environment.py --out benchmarks/results/ci_environment.json
+
+      - name: Build release packages
+        run: python -m build
+
+      - name: Enforce release package contents
+        run: python scripts/assert_release_package.py --dist-dir dist
+
+      - name: Prove fresh wheel install
+        run: python scripts/assert_fresh_install.py --dist-dir dist
+
+      - name: Classify public CI release artifacts
+        run: python scripts/classify_release_artifacts.py benchmarks/results/sample_benchmark.json benchmarks/results/sample_benchmark.md docs/mbs_evidence_brief.md --repo-root . --fail-on-review
 
       - name: Run deterministic MBS demo artifacts
         run: mbs demo --write-artifacts
@@ -44,6 +67,9 @@ jobs:
       - name: Build hard nested tool-call fixture evidence packs
         run: python scripts/run_nested_tool_fixture_pack.py --out-dir benchmarks/results/nested_tool_fixture_pack
 
+      - name: Build multi-schema fixture benchmark bundle
+        run: python scripts/run_multi_schema_fixture_bundle.py --out-dir benchmarks/results/multi_schema_fixture_bundle
+
       - name: Assert reviewable CI artifact completeness
         run: python scripts/assert_ci_artifacts.py --results-dir benchmarks/results
 
@@ -51,13 +77,15 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mbs-ci-artifacts
+          name: mbs-ci-artifacts-${{ matrix.os }}-py${{ matrix.python-version }}
           path: |
             benchmarks/results/ci_bench.json
             benchmarks/results/ci_report.md
             benchmarks/results/ci_gate.json
+            benchmarks/results/ci_environment.json
             benchmarks/results/evidence_pack_ci/**
             benchmarks/results/nested_tool_fixture_pack/**
+            benchmarks/results/multi_schema_fixture_bundle/**
             benchmarks/results/sample_benchmark.json
             benchmarks/results/sample_benchmark.md
             docs/mbs_evidence_brief.md

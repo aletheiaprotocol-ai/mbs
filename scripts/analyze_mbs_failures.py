@@ -63,7 +63,7 @@ def expand_paths(values: list[str]) -> list[Path]:
 
 def load_cases(path: str) -> dict[str, dict[str, Any]]:
     cases: dict[str, dict[str, Any]] = {}
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
+    for line in Path(path).read_text(encoding="utf-8-sig").splitlines():
         if not line.strip():
             continue
         row = json.loads(line)
@@ -76,7 +76,7 @@ def analyze(files: list[Path], *, cases: dict[str, dict[str, Any]], exclude_infr
     all_rows: list[dict[str, Any]] = []
     response_index: dict[tuple[str, str, str], dict[str, Any]] = {}
     for file_path in files:
-        payload = json.loads(file_path.read_text(encoding="utf-8"))
+        payload = json.loads(file_path.read_text(encoding="utf-8-sig"))
         model = str(payload.get("model") or "unknown")
         mode = str(payload.get("decoding_mode") or "default")
         responses = load_responses_for(file_path, payload)
@@ -118,7 +118,7 @@ def load_responses_for(file_path: Path, payload: dict[str, Any]) -> dict[tuple[s
     model = str(payload.get("model") or "unknown")
     mode = str(payload.get("decoding_mode") or "default")
     rows: dict[tuple[str, str, str], dict[str, Any]] = {}
-    for line in existing.read_text(encoding="utf-8").splitlines():
+    for line in existing.read_text(encoding="utf-8-sig").splitlines():
         if not line.strip():
             continue
         row = json.loads(line)

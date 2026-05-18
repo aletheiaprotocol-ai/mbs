@@ -1,0 +1,74 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["incident_id", "severity", "confidence", "actions", "communications", "runbook_version", "reason"],
+  "properties": {
+    "incident_id": {
+      "type": "string",
+      "pattern": "^INC-[0-9]{4}$"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["SEV1", "SEV2", "SEV3", "SEV4"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["owner", "operation", "target", "deadline_minutes"],
+        "properties": {
+          "owner": {
+            "type": "string",
+            "enum": ["SRE", "SECURITY", "DBA", "COMMS"]
+          },
+          "operation": {
+            "type": "string",
+            "enum": ["PAGE", "ROLLBACK", "SCALE_OUT", "BLOCK_IP", "ROTATE_SECRET", "CHECK_REPLICA", "NOTIFY"]
+          },
+          "target": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80,
+            "pattern": "^[A-Za-z0-9 ./_:-]+$"
+          },
+          "deadline_minutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 60
+          }
+        }
+      }
+    },
+    "communications": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["customer_update_required", "internal_channel"],
+      "properties": {
+        "customer_update_required": {
+          "type": "boolean"
+        },
+        "internal_channel": {
+          "type": "string",
+          "enum": ["#incident-sev1", "#incident-sev2", "#ops-watch"]
+        }
+      }
+    },
+    "runbook_version": {
+      "type": "string",
+      "const": "ir-v1"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 12,
+      "maxLength": 240
+    }
+  }
+}

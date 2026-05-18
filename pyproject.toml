@@ -41,6 +41,7 @@ mbs-compile = "mbs_compiler:main"
 
 [tool.setuptools.packages.find]
 include = ["mbs*"]
+exclude = ["mbs_product_readiness_audit*"]
 
 [tool.setuptools]
 py-modules = ["mbs_compiler"]

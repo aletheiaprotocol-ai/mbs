@@ -53,7 +53,7 @@ def load_schema(source: str | Path | dict[str, Any] | type[Any]) -> dict[str, An
     if str(source) == "-":
         return json.load(sys.stdin)
 
-    with open(source, "r", encoding="utf-8") as f:
+    with open(source, "r", encoding="utf-8-sig") as f:
         return json.load(f)
 
 

@@ -1,5 +1,6 @@
 include LICENSE
 include README.md
+include SECURITY.md
 include MBS_COMPILER_README.md
 include mbs_compiler.py
 recursive-include mbs *.py
@@ -10,7 +11,20 @@ include benchmarks/*.yaml
 include benchmarks/model_suites.json
 include benchmarks/results/sample_benchmark.json
 include benchmarks/results/sample_benchmark.md
+prune mbs_product_readiness_audit
 prune tests
 include tests/test_mbs_compiler.py
 include tests/test_mbs_product.py
 include tests/test_mbs_conformance.py
+include tests/test_release_hygiene.py
+include tests/test_release_package.py
+include tests/test_fresh_install.py
+include tests/test_artifact_classification.py
+include tests/test_cli_command_matrix_docs.py
+include tests/test_ci_release_workflow.py
+include tests/test_multi_schema_fixture_bundle.py
+include tests/test_adversarial_hard_schema_pack.py
+include tests/test_nested_provider_evidence.py
+include tests/test_leonardo_hpc_crosscheck.py
+include tests/test_leonardo_shell_wrappers.py
+include tests/test_enterprise_external_evidence.py

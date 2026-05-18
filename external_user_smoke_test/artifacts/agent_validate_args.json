@@ -1,0 +1,30 @@
+﻿{
+    "schema_path": "examples/fintech_transaction_risk/schema.json",
+    "output": {
+  "transaction_id": "TXN-41002",
+  "risk_level": "MEDIUM",
+  "decision": "STEP_UP_AUTH",
+  "risk_score": 58,
+  "signals": [
+    {
+      "name": "new_payee",
+      "weight": 0.45,
+      "evidence": "Beneficiary has not been used before."
+    },
+    {
+      "name": "amount_anomaly",
+      "weight": 0.35,
+      "evidence": "Transfer is above normal customer range."
+    }
+  ],
+  "controls": {
+    "requires_manual_review": false,
+    "customer_message": "verify_identity",
+    "audit_channel": "risk-ledger"
+  },
+  "model_policy_version": "finrisk-v1",
+  "reason": "Step-up authentication is enough for a high-value new-payee payment without stronger fraud signals."
+}
+
+}
+

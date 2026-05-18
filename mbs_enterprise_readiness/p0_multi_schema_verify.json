@@ -1,0 +1,84 @@
+﻿{
+  "artifacts": {
+    "evidence_pack": "D:\\projects\\mbs-public-release\\benchmarks\\results\\p0_multi_schema_verify\\evidence_pack",
+    "manifest": "D:\\projects\\mbs-public-release\\benchmarks\\results\\p0_multi_schema_verify\\manifest.json",
+    "results_dir": "D:\\projects\\mbs-public-release\\benchmarks\\results\\p0_multi_schema_verify\\results"
+  },
+  "checks": {
+    "cost_per_valid_output_present": true,
+    "evidence_pack_gate_status": "PASS",
+    "gate_status": "PASS",
+    "mean_clean_json_rate": 1.0,
+    "mean_schema_valid_rate": 1.0,
+    "mean_semantic_correct_rate": 1.0,
+    "missing_trace_rows": 0,
+    "models": [
+      "fintech-fixture-json-mode",
+      "incident-fixture-json-mode",
+      "nested-tool-fixture-tool-call",
+      "support-fixture-json-mode"
+    ],
+    "report_rows": 4,
+    "result_files": 4,
+    "schemas": [
+      "D:\\projects\\mbs-public-release\\examples\\fintech_transaction_risk\\schema.json",
+      "D:\\projects\\mbs-public-release\\examples\\incident_response_runbook\\schema.json",
+      "D:\\projects\\mbs-public-release\\examples\\nested_tool_arguments\\schema.json",
+      "D:\\projects\\mbs-public-release\\examples\\support_ticket_triage\\schema.json"
+    ],
+    "total_runs": 49,
+    "traceable_case_rows": 49
+  },
+  "classification": "fixture_smoke_not_provider_benchmark",
+  "evidence_boundary": {
+    "classification": "fixture_smoke_not_provider_benchmark",
+    "not_broad_model_benchmark": true,
+    "not_provider_benchmark": true,
+    "public_claim_boundary": "Local fixture/software benchmark breadth evidence across fixed example schemas only."
+  },
+  "purpose": "local multi-schema fixture benchmark breadth evidence",
+  "remaining_boundary": "Real provider/OSS evidence, remote CI evidence, and governance review remain separate blockers.",
+  "status": "PASS",
+  "workflows": [
+    {
+      "clean_json_rate": 1.0,
+      "cost_per_valid_output_tokens": 269.125,
+      "key": "incident_response_runbook",
+      "model": "incident-fixture-json-mode",
+      "runs": 8,
+      "schema": "examples/incident_response_runbook/schema.json",
+      "schema_valid_rate": 1.0,
+      "semantic_correct_rate": 1.0
+    },
+    {
+      "clean_json_rate": 1.0,
+      "cost_per_valid_output_tokens": 323.375,
+      "key": "fintech_transaction_risk",
+      "model": "fintech-fixture-json-mode",
+      "runs": 8,
+      "schema": "examples/fintech_transaction_risk/schema.json",
+      "schema_valid_rate": 1.0,
+      "semantic_correct_rate": 1.0
+    },
+    {
+      "clean_json_rate": 1.0,
+      "cost_per_valid_output_tokens": 427.5,
+      "key": "support_ticket_triage",
+      "model": "support-fixture-json-mode",
+      "runs": 8,
+      "schema": "examples/support_ticket_triage/schema.json",
+      "schema_valid_rate": 1.0,
+      "semantic_correct_rate": 1.0
+    },
+    {
+      "clean_json_rate": 1.0,
+      "cost_per_valid_output_tokens": 154.68,
+      "key": "nested_tool_arguments",
+      "model": "nested-tool-fixture-tool-call",
+      "runs": 25,
+      "schema": "examples/nested_tool_arguments/schema.json",
+      "schema_valid_rate": 1.0,
+      "semantic_correct_rate": 1.0
+    }
+  ]
+}

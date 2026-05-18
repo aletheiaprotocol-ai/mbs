@@ -59,11 +59,14 @@ def compare_results(
                 regressions.append(item)
 
     status = "FAIL" if regressions else "PASS"
+    reason = ""
     if not comparisons:
         status = "NO_MATCH"
+        reason = "no comparable metric rows matched between baseline and current results"
 
     return {
         "status": status,
+        "reason": reason,
         "metrics": metrics,
         "key_fields": key_fields,
         "max_drop": max_drop,

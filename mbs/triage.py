@@ -114,7 +114,7 @@ def _load_expected_models(path: str | Path | None) -> set[str]:
     if not p.exists():
         return set()
     models: set[str] = set()
-    for raw_line in p.read_text(encoding="utf-8").splitlines():
+    for raw_line in p.read_text(encoding="utf-8-sig").splitlines():
         line = raw_line.strip()
         if not line:
             continue
@@ -124,7 +124,7 @@ def _load_expected_models(path: str | Path | None) -> set[str]:
 
 def _load_json_file(path: Path, issues: list[dict[str, Any]]) -> Any:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8-sig"))
     except Exception as exc:
         issues.append({"type": "unreadable_result", "file": str(path), "error": str(exc)})
         return None

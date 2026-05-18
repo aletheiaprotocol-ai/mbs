@@ -7,25 +7,40 @@ import re
 from typing import Any
 
 
+_FENCED_JSON_RE = re.compile(r"```(?:json)?\s*(\{.*?\}|\[.*?\])\s*```", re.IGNORECASE | re.DOTALL)
+_UNSAFE_TEXT_RE = re.compile(
+    r"\b(ignore (?:all |the )?(?:previous|prior|above) instructions|"
+    r"disregard (?:all |the )?(?:previous|prior|above) instructions|"
+    r"reveal (?:the )?(?:system prompt|developer message|hidden instructions)|"
+    r"system prompt|developer message|hidden instructions|"
+    r"exfiltrate|credential|api[_ -]?key|secret token|"
+    r"delete all|drop table|shutdown|disable safety)\b",
+    re.IGNORECASE,
+)
+
+
 def validate_output(schema: dict[str, Any], output: str | dict[str, Any]) -> dict[str, Any]:
     """Validate output against the subset of JSON Schema MBS needs for v1."""
     errors: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
 
     if isinstance(output, str):
-        try:
-            data = json.loads(output)
+        parsed = _parse_json_output(output)
+        if parsed["ok"]:
+            data = parsed["data"]
             json_valid = True
-        except json.JSONDecodeError as exc:
+            warnings.extend(parsed["warnings"])
+        else:
             return {
                 "json_valid": False,
                 "schema_valid": False,
                 "status": "FAIL",
+                "failure_reason": "invalid_json",
                 "errors": [
                     {
                         "field": "$",
                         "type": "invalid_json",
-                        "message": str(exc),
+                        "message": parsed["message"],
                     }
                 ],
                 "warnings": [],
@@ -36,15 +51,97 @@ def validate_output(schema: dict[str, Any], output: str | dict[str, Any]) -> dic
         json_valid = True
 
     _validate_schema(schema, data, "$", errors, warnings)
+    _collect_safety_warnings(data, "$", warnings)
     status = "FAIL" if errors else "REVIEW" if warnings else "PASS"
     return {
         "json_valid": json_valid,
         "schema_valid": not errors,
         "status": status,
+        "failure_reason": _failure_reason(errors),
         "errors": errors,
         "warnings": warnings,
         "output": data,
     }
+
+
+def _failure_reason(errors: list[dict[str, Any]]) -> str | None:
+    if not errors:
+        return None
+    return str(errors[0].get("type") or "validation_error")
+
+
+def _parse_json_output(output: str) -> dict[str, Any]:
+    try:
+        return {"ok": True, "data": json.loads(output), "warnings": []}
+    except json.JSONDecodeError as direct_exc:
+        fenced = _extract_fenced_json(output)
+        if fenced is not None:
+            try:
+                return {
+                    "ok": True,
+                    "data": json.loads(fenced),
+                    "warnings": [{"field": "$", "type": "fenced_markdown_json"}],
+                }
+            except json.JSONDecodeError:
+                pass
+
+        extracted = _extract_balanced_json(output)
+        if extracted is not None:
+            try:
+                return {
+                    "ok": True,
+                    "data": json.loads(extracted),
+                    "warnings": [{"field": "$", "type": "prose_wrapped_json"}],
+                }
+            except json.JSONDecodeError:
+                pass
+
+        return {"ok": False, "message": str(direct_exc), "warnings": []}
+
+
+def _extract_fenced_json(output: str) -> str | None:
+    match = _FENCED_JSON_RE.search(output)
+    if not match:
+        return None
+    return match.group(1).strip()
+
+
+def _extract_balanced_json(output: str) -> str | None:
+    starts = [idx for idx, char in enumerate(output) if char in "{["]
+    for start in starts:
+        candidate = _balanced_slice(output, start)
+        if candidate is not None:
+            return candidate
+    return None
+
+
+def _balanced_slice(text: str, start: int) -> str | None:
+    opening = text[start]
+    closing = "}" if opening == "{" else "]"
+    stack = [closing]
+    in_string = False
+    escaped = False
+    for idx in range(start + 1, len(text)):
+        char = text[idx]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char in "{[":
+            stack.append("}" if char == "{" else "]")
+        elif char in "}]":
+            if not stack or char != stack[-1]:
+                return None
+            stack.pop()
+            if not stack:
+                return text[start : idx + 1].strip()
+    return None
 
 
 def _validate_schema(
@@ -165,6 +262,25 @@ def _enum_error(path: str, value: Any, enum: list[Any]) -> dict[str, Any]:
 
     error["type"] = "invented_enum"
     return error
+
+
+def _collect_safety_warnings(value: Any, path: str, warnings: list[dict[str, Any]]) -> None:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            _collect_safety_warnings(child, _join(path, str(key)), warnings)
+        return
+    if isinstance(value, list):
+        for idx, child in enumerate(value):
+            _collect_safety_warnings(child, f"{path}[{idx}]", warnings)
+        return
+    if isinstance(value, str) and _UNSAFE_TEXT_RE.search(value):
+        warnings.append(
+            {
+                "field": path,
+                "type": "safety_review_required",
+                "message": "Schema-valid text contains possible prompt-injection, credential, or unsafe-action content.",
+            }
+        )
 
 
 def _join(base: str, key: str) -> str:

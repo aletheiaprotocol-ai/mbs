@@ -10,7 +10,7 @@ MBS compiles a schema into a minimal behavioral contract, validates model output
 
 ## 30-Second Demo
 
-Input: support-ticket schema + prompt about possible account takeover. The mock model returns `action=ANSWER|ESCALATE` and `priority=high`. MBS returns `FAIL` with failure type `invalid_enum`, trace `mbs_trace_ab5bb113f518`, and a targeted enum repair. The repaired output passes with trace `mbs_trace_d31840b3a52f`.
+Input: support-ticket schema + prompt about possible account takeover. The mock model returns `action=ANSWER|ESCALATE` and `priority=high`. MBS returns `FAIL` with failure type `invalid_enum`, trace `mbs_trace_918be14603a8`, and a targeted enum repair. The repaired output passes with trace `mbs_trace_efb9aecbdd70`.
 
 ## Sample Result
 

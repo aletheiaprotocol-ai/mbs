@@ -66,7 +66,7 @@ def aggregate_results(paths: list[str | Path], *, exclude_infra: bool = False) -
     files = expand_paths(paths)
     all_rows: list[dict[str, Any]] = []
     for file_path in files:
-        payload = json.loads(Path(file_path).read_text(encoding="utf-8"))
+        payload = json.loads(Path(file_path).read_text(encoding="utf-8-sig"))
         all_rows.extend(_rows_from_payload(payload, str(file_path)))
     rows = [row for row in all_rows if not _is_infra_row(row)] if exclude_infra else all_rows
     return {
@@ -315,6 +315,8 @@ def _rows_from_payload(payload: Any, source: str) -> list[dict[str, Any]]:
             rows.append(_normalize_row(row, source))
         return rows
     if isinstance(payload.get("summary"), dict):
+        if payload.get("rows") == [] and int(payload["summary"].get("runs") or 0) == 0:
+            return []
         row = dict(payload["summary"])
         case_rows = [item for item in payload.get("rows", []) if isinstance(item, dict)]
         if case_rows and any("schema_valid" in item for item in case_rows):

@@ -97,13 +97,17 @@ mbs evidence-pack --results benchmarks/results/ci_bench.json --gate-config bench
 mbs agent-tools --list
 mbs make-response-template --cases examples/tool_argument_generation/cases.jsonl --out provider_responses.template.jsonl --output-field tool_call
 mbs adapt-responses --schema examples/tool_argument_generation/schema.json --cases examples/tool_argument_generation/cases.jsonl --responses provider_responses.jsonl --model provider-model --decoding-mode tool_call --out provider_responses.mbs.json
-python scripts/run_nested_tool_fixture_pack.py --out-dir results/nested_tool_fixture_pack
+python scripts/run_nested_tool_fixture_pack.py --out-dir benchmarks/results/nested_tool_fixture_pack
+python scripts/run_multi_schema_fixture_bundle.py --out-dir benchmarks/results/multi_schema_fixture_bundle
 python scripts/run_nested_retry_matrix.py --out-dir results/nested_retry_matrix_fixture
 python scripts/run_mbs_lang_matrix.py --out-dir results/mbs_lang_matrix_fixture
 python scripts/run_lang_provider_evidence.py --responses examples/multilingual_risk_review/provider_json_mode_good.jsonl --model fixture-lang-provider --classification fixture --mode json_mode --out-dir results/mbs_lang_provider_evidence
 python scripts/run_nested_provider_evidence.py --responses results/provider_nested_tool_call.responses.jsonl --model provider-or-oss-model-id --classification provider --mode tool_call --out-dir results/nested_provider_evidence
 python scripts/build_nested_provider_evidence.py --responses results/provider_nested_tool_call.responses.jsonl --model provider-or-oss-model-id --decoding-mode tool_call --classification provider --gate-config benchmarks/provider_gate.example.yaml --out-dir results/nested_provider_evidence
 python scripts/assert_ci_artifacts.py --results-dir benchmarks/results
+python scripts/assert_release_package.py --dist-dir dist
+python scripts/assert_fresh_install.py --dist-dir dist
+python scripts/classify_release_artifacts.py benchmarks/results/sample_benchmark.json benchmarks/results/sample_benchmark.md docs/mbs_evidence_brief.md --repo-root .
 python scripts/make_tuning_dataset.py --mbs-result results/hard_agent_routing/provider.mbs.json --cases examples/hard_agent_routing/cases.jsonl --schema examples/hard_agent_routing/schema.json --out results/training/hard_agent_routing_candidates.jsonl
 python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/*.mbs.json" --cases examples/hard_agent_routing/cases.jsonl --out-md results/hard_agent_routing/failure_analysis.md --out-csv results/hard_agent_routing/failure_analysis.csv
 ```
@@ -112,6 +116,7 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 - Active hard nested tool-call fixtures: `examples/nested_tool_arguments/` 25-case suite with nested arrays, multi-action requests, unsafe-action traps, unsupported currency/jurisdiction, missing/stale/fake sources, prompt injection, identity ambiguity, partial verification, abstain/review cases, and retry-instruction drift
 - Archived Azure matrix case snapshot: `examples/nested_tool_arguments/cases_8_may2026.jsonl`
 - Hard nested retry/repair matrix fixture: `scripts/run_nested_retry_matrix.py`
+- Multi-schema fixture benchmark bundle: `scripts/run_multi_schema_fixture_bundle.py`
 - MBS-Lang token-fairness fixture matrix: `scripts/run_mbs_lang_matrix.py`
 - MBS-Lang provider/OSS/HPC evidence runner: `scripts/run_lang_provider_evidence.py`
 - Hard nested provider/OSS evidence builder: `scripts/build_nested_provider_evidence.py`
@@ -130,6 +135,13 @@ python scripts/analyze_mbs_failures.py --results "results/hard_agent_routing/**/
 - `docs/mbs_model_behavior_guidance.md`
 - `docs/mbs_agent_tools.md`
 - `docs/mbs_provider_recipes.md`
+- `docs/mbs_security_privacy_release_hygiene.md`
+- `docs/mbs_compliance_security_boundary.md`
+- `docs/mbs_enterprise_blocker_disposition.md`
+- `docs/mbs_enterprise_compatibility_matrix.md`
+- `docs/mbs_release_readiness_checklist.md`
+- `docs/mbs_enterprise_external_evidence_requests.md`
+- `docs/mbs_cli_command_matrix_20260517.md`
 - `docs/mbs_ci_regression_gate.md`
 - `docs/mbs_sanitized_evidence_release_may2026.md`
 - `docs/mbs_nested_provider_matrix_may2026.md`
@@ -165,6 +177,10 @@ Run MBS before deploying an agent that calls tools or updates records:
 ```bash
 python -m pip install -e ".[test]"
 python -m pytest -q
+python -m build
+python scripts/assert_release_package.py --dist-dir dist
+python scripts/assert_fresh_install.py --dist-dir dist
+python scripts/classify_release_artifacts.py benchmarks/results/sample_benchmark.json benchmarks/results/sample_benchmark.md docs/mbs_evidence_brief.md --repo-root .
 mbs bench --config benchmarks/models.yaml --out benchmarks/results/ci_bench.json
 mbs report --results benchmarks/results/ci_bench.json --exclude-infra --require-traces --summary-only
 mbs gate --results benchmarks/results/ci_bench.json --config benchmarks/ci_gate.yaml

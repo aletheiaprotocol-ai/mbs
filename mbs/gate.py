@@ -30,7 +30,7 @@ def load_gate_config(path: str | Path | None) -> dict[str, Any]:
     if not path:
         return {"thresholds": dict(DEFAULT_THRESHOLDS)}
     p = Path(path)
-    text = p.read_text(encoding="utf-8")
+    text = p.read_text(encoding="utf-8-sig")
     if p.suffix.lower() in {".yaml", ".yml"}:
         config = _load_yaml_text(text)
     else:
@@ -78,6 +78,7 @@ def evaluate_gate(
     status = "PASS" if not failures else "FAIL"
     return {
         "status": status,
+        "failure_reason": _failure_reason(failures),
         "thresholds": thresholds,
         "summary": summary,
         "failures": failures,
@@ -127,6 +128,16 @@ def _check_min(failures: list[dict[str, Any]], summary: dict[str, Any], key: str
     actual = summary.get(key)
     if actual is None or float(actual) < float(required):
         failures.append({"metric": key, "actual": actual, "required": f">= {required}"})
+
+
+def _failure_reason(failures: list[dict[str, Any]]) -> str | None:
+    if not failures:
+        return None
+    first = failures[0]
+    if first.get("reason"):
+        return str(first["reason"])
+    metric = first.get("metric") or "gate_threshold"
+    return f"gate_failed:{metric}"
 
 
 def _check_max(failures: list[dict[str, Any]], summary: dict[str, Any], key: str, required: Any) -> None:

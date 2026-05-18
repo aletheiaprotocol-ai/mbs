@@ -30,14 +30,14 @@ def main() -> int:
     parser.add_argument("--min-failures", type=int, default=1, help="Minimum failures per case/model/mode key")
     args = parser.parse_args()
 
-    schema_text = Path(args.schema).read_text(encoding="utf-8")
+    schema_text = Path(args.schema).read_text(encoding="utf-8-sig")
     schema = json.loads(schema_text)
     schema_hash = hashlib.sha256(canonical_json(schema).encode("utf-8")).hexdigest()[:16]
     cases = index_cases(load_jsonl(args.cases))
 
     rows: list[dict[str, Any]] = []
     for result_path in args.mbs_result:
-        result = json.loads(Path(result_path).read_text(encoding="utf-8"))
+        result = json.loads(Path(result_path).read_text(encoding="utf-8-sig"))
         for row in result.get("rows", []):
             row["_source_result"] = result_path
             rows.append(row)
@@ -81,7 +81,7 @@ def main() -> int:
 
 def load_jsonl(path: str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
+    for line in Path(path).read_text(encoding="utf-8-sig").splitlines():
         if line.strip():
             rows.append(json.loads(line))
     return rows

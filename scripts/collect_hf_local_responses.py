@@ -43,7 +43,7 @@ def main() -> int:
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     model_id = args.model_id or args.model_path
-    schema = json.loads(Path(args.schema).read_text(encoding="utf-8"))
+    schema = json.loads(Path(args.schema).read_text(encoding="utf-8-sig"))
     cases = load_jsonl(args.cases)
     if args.limit > 0:
         cases = cases[: args.limit]
@@ -165,7 +165,7 @@ def dtype_arg(value: str, torch: Any) -> Any:
 
 def load_jsonl(path: str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for line in Path(path).read_text(encoding="utf-8").splitlines():
+    for line in Path(path).read_text(encoding="utf-8-sig").splitlines():
         if line.strip():
             rows.append(json.loads(line))
     return rows

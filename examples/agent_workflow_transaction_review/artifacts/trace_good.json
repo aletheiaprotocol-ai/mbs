@@ -1,0 +1,19 @@
+{
+  "trace_id": "mbs_trace_04b28d566999",
+  "schema_hash": "sha256:5bf71010d3c2320f28e9eca5c0b82cf986a0da0f988fcf0d103d77803e9a1afe",
+  "contract_hash": "sha256:eec488b8e7b32baf23570b34e927bd79826352e53f1fd14713aff827ef7befb8",
+  "input_hash": "sha256:a7ce8c9bc8b9e4f161ee6e435a2a8c5ca4d65153743ce2abc2efa2663332bc59",
+  "output_hash": "sha256:7112c58335336e547622ba55b4e6001c41b4a1cb642cd8b49a927d4ffac09d88",
+  "model": "transaction-review-agent",
+  "mbs_version": "0.1.1",
+  "validator_version": "json_schema_v1",
+  "timestamp": "2026-05-17T15:29:01Z",
+  "status": "PASS",
+  "failure_reason": null,
+  "errors": [],
+  "tokens": {
+    "mbs_contract": 59,
+    "verbose_baseline": 139,
+    "output": 195
+  }
+}

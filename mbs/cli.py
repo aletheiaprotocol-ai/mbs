@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .agent_tools import AgentToolError, call_agent_tool, handle_agent_tool_request, list_agent_tools
+from .agent_tools import AgentToolError, call_agent_tool, error_envelope, handle_agent_tool_request, list_agent_tools, success_envelope
 from .adapter import adapt_response_jsonl, write_response_template
 from .bench import mock_output, run_benchmark, run_benchmark_matrix
 from .compare import compare_results, format_compare, write_compare_json
@@ -25,6 +25,10 @@ from .retry_audit import audit_retry_attempts, format_retry_audit, write_retry_a
 from .trace import create_trace
 from .triage import format_triage, triage_results, write_triage_json
 from .validate import validate_output
+
+
+class CliInputError(ValueError):
+    """Controlled CLI input error for routine user mistakes."""
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -205,49 +209,53 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 1
 
-    if args.command == "compile":
-        return _cmd_compile(args)
-    if args.command == "validate":
-        return _cmd_validate(args)
-    if args.command == "check":
-        return _cmd_check(args)
-    if args.command == "trace":
-        return _cmd_trace(args)
-    if args.command == "cost":
-        return _cmd_cost(args)
-    if args.command == "bench":
-        return _cmd_bench(args)
-    if args.command == "demo":
-        return _cmd_demo(args)
-    if args.command == "test":
-        return _cmd_test(args)
-    if args.command == "lang":
-        return _cmd_lang(args)
-    if args.command == "report":
-        return _cmd_report(args)
-    if args.command == "gate":
-        return _cmd_gate(args)
-    if args.command == "evidence-pack":
-        return _cmd_evidence_pack(args)
-    if args.command == "compare":
-        return _cmd_compare(args)
-    if args.command == "retry-audit":
-        return _cmd_retry_audit(args)
-    if args.command == "models":
-        return _cmd_models(args)
-    if args.command == "triage":
-        return _cmd_triage(args)
-    if args.command == "agent-tools":
-        return _cmd_agent_tools(args)
-    if args.command == "adapt-responses":
-        return _cmd_adapt_responses(args)
-    if args.command == "make-response-template":
-        return _cmd_make_response_template(args)
+    try:
+        if args.command == "compile":
+            return _cmd_compile(args)
+        if args.command == "validate":
+            return _cmd_validate(args)
+        if args.command == "check":
+            return _cmd_check(args)
+        if args.command == "trace":
+            return _cmd_trace(args)
+        if args.command == "cost":
+            return _cmd_cost(args)
+        if args.command == "bench":
+            return _cmd_bench(args)
+        if args.command == "demo":
+            return _cmd_demo(args)
+        if args.command == "test":
+            return _cmd_test(args)
+        if args.command == "lang":
+            return _cmd_lang(args)
+        if args.command == "report":
+            return _cmd_report(args)
+        if args.command == "gate":
+            return _cmd_gate(args)
+        if args.command == "evidence-pack":
+            return _cmd_evidence_pack(args)
+        if args.command == "compare":
+            return _cmd_compare(args)
+        if args.command == "retry-audit":
+            return _cmd_retry_audit(args)
+        if args.command == "models":
+            return _cmd_models(args)
+        if args.command == "triage":
+            return _cmd_triage(args)
+        if args.command == "agent-tools":
+            return _cmd_agent_tools(args)
+        if args.command == "adapt-responses":
+            return _cmd_adapt_responses(args)
+        if args.command == "make-response-template":
+            return _cmd_make_response_template(args)
+    except (CliInputError, AgentToolError, FileNotFoundError, PermissionError, json.JSONDecodeError, ValueError, KeyError) as exc:
+        print(f"MBS input error: {exc}", file=sys.stderr)
+        return 2
     raise AssertionError(args.command)
 
 
 def _cmd_compile(args: argparse.Namespace) -> int:
-    schema = load_schema(args.schema)
+    schema = _load_schema_cli(args.schema)
     result = compile_schema(
         schema,
         format=args.format,
@@ -268,7 +276,7 @@ def _cmd_compile(args: argparse.Namespace) -> int:
 
 
 def _cmd_validate(args: argparse.Namespace) -> int:
-    schema = load_schema(args.schema)
+    schema = _load_schema_cli(args.schema)
     output = _load_json_or_inline(args.output)
     result = validate_output(schema, output)
     if args.json:
@@ -279,15 +287,25 @@ def _cmd_validate(args: argparse.Namespace) -> int:
 
 
 def _cmd_check(args: argparse.Namespace) -> int:
-    schema = load_schema(args.schema)
+    schema = _load_schema_cli(args.schema)
     contract = compile_schema(schema)
     output = _load_json_or_inline(args.output) if args.output else mock_output(schema, args.input)
     validation = validate_output(schema, output)
     output_tokens = estimate_tokens(canonical_json(validation.get("output")))
     trace = create_trace(schema, contract, validation, input_text=args.input, model=args.model, output_tokens=output_tokens)
-    payload = {"output": validation["output"], "validation": validation, "trace": trace, "contract": contract}
+    payload = {
+        "status": validation["status"],
+        "failure_reason": validation.get("failure_reason"),
+        "trace_id": trace["trace_id"],
+        "schema_hash": trace["schema_hash"],
+        "contract_hash": trace["contract_hash"],
+        "output": validation["output"],
+        "validation": validation,
+        "trace": trace,
+        "contract": contract,
+    }
     if args.trace_out:
-        Path(args.trace_out).write_text(json.dumps(trace, indent=2), encoding="utf-8")
+        _write_json(args.trace_out, trace)
     if args.json:
         _print_json(payload)
     else:
@@ -296,14 +314,14 @@ def _cmd_check(args: argparse.Namespace) -> int:
 
 
 def _cmd_trace(args: argparse.Namespace) -> int:
-    schema = load_schema(args.schema)
+    schema = _load_schema_cli(args.schema)
     output = _load_json_or_inline(args.output)
     contract = compile_schema(schema)
     validation = validate_output(schema, output)
     output_tokens = estimate_tokens(canonical_json(validation.get("output")))
     trace = create_trace(schema, contract, validation, input_text=args.input, model=args.model, output_tokens=output_tokens)
     if args.out:
-        Path(args.out).write_text(json.dumps(trace, indent=2), encoding="utf-8")
+        _write_json(args.out, trace)
     _print_json(trace)
     return 0
 
@@ -314,7 +332,7 @@ def _cmd_cost(args: argparse.Namespace) -> int:
     elif args.schema and args.cases:
         records = run_benchmark(args.schema, args.cases)["rows"]
     else:
-        raise SystemExit("mbs cost requires --results or --schema plus --cases")
+        raise CliInputError("mbs cost requires --results or --schema plus --cases")
     result = report_cost(records)
     if args.json:
         _print_json(result)
@@ -332,7 +350,9 @@ def _cmd_bench(args: argparse.Namespace) -> int:
         config = _load_config(args.config)
         schema = config.get("schemas", config.get("schema"))
         if not schema:
-            raise SystemExit("mbs bench config requires schema or schemas")
+            raise CliInputError("mbs bench config requires schema or schemas")
+        if "cases" not in config:
+            raise CliInputError("mbs bench config requires cases")
         cases = config["cases"]
         models = _config_list(config, "models", config.get("model", args.model))
         prompt_styles = _config_list(config, "prompt_styles", config.get("prompt_style", "full"))
@@ -341,7 +361,7 @@ def _cmd_bench(args: argparse.Namespace) -> int:
         result = run_benchmark_matrix(schema, cases, models, prompt_styles, decoding_modes, languages)
     else:
         if not args.schema or not args.cases:
-            raise SystemExit("mbs bench requires --schema and --cases unless --config is provided")
+            raise CliInputError("mbs bench requires --schema and --cases unless --config is provided")
         schema = args.schema
         cases = args.cases
         result = run_benchmark(schema, cases, model=args.model)
@@ -383,10 +403,13 @@ def _cmd_demo(args: argparse.Namespace) -> int:
 
 def _cmd_test(args: argparse.Namespace) -> int:
     schema_dir = Path(args.schemas)
+    schema_files = sorted(schema_dir.glob("*.json")) if schema_dir.exists() else []
+    if not schema_files:
+        raise CliInputError(f"no schema files found: {args.schemas}")
     model_config = _load_config(args.models) if args.models else {}
     models = _config_list(model_config, "models", model_config.get("model", "mock")) if model_config else ["mock"]
     rows: list[dict[str, Any]] = []
-    for schema_file in sorted(schema_dir.glob("*.json")):
+    for schema_file in schema_files:
         candidate = _load_json_or_inline(str(schema_file))
         if not isinstance(candidate, dict) or "properties" not in candidate:
             continue
@@ -413,7 +436,7 @@ def _cmd_test(args: argparse.Namespace) -> int:
 
 
 def _cmd_lang(args: argparse.Namespace) -> int:
-    schema = load_schema(args.schema)
+    schema = _load_schema_cli(args.schema)
     result = compile_language_contract(schema, args.input_language, args.output_language, args.contract_language)
     if args.json:
         _print_json(result)
@@ -462,6 +485,8 @@ def _cmd_evidence_pack(args: argparse.Namespace) -> int:
         copy_results=args.copy_results,
         title=args.title,
     )
+    if not manifest["checks"].get("report_rows"):
+        raise CliInputError("no result rows found")
     if args.json:
         _print_json(manifest)
     else:
@@ -490,6 +515,8 @@ def _cmd_compare(args: argparse.Namespace) -> int:
 
 def _cmd_retry_audit(args: argparse.Namespace) -> int:
     result = audit_retry_attempts(args.results, max_examples=max(args.max_examples, 0))
+    if result.get("audited_rows", 0) == 0:
+        raise CliInputError("no retry result rows found")
     if args.json:
         _print_json(result)
     else:
@@ -538,6 +565,8 @@ def _cmd_triage(args: argparse.Namespace) -> int:
         require_traces=not args.allow_missing_traces,
         max_failure_examples=max(args.max_failure_examples, 0),
     )
+    if not result.get("files"):
+        raise CliInputError("no result rows found")
     if args.json:
         _print_json(result)
     else:
@@ -549,19 +578,29 @@ def _cmd_triage(args: argparse.Namespace) -> int:
 
 
 def _cmd_agent_tools(args: argparse.Namespace) -> int:
-    try:
-        if args.list or (not args.call and not args.request):
-            payload: Any = list_agent_tools()
-        elif args.request:
-            request = _load_config(args.request)
+    if args.list or (not args.call and not args.request):
+        payload: Any = list_agent_tools()
+    elif args.request:
+        request = _load_config(args.request)
+        tool_name = request.get("tool") or request.get("name") if isinstance(request, dict) else None
+        try:
             payload = handle_agent_tool_request(request)
-        elif args.call:
-            arguments = _load_config(args.args)
-            payload = {"tool": args.call, "result": call_agent_tool(args.call, arguments)}
-        else:
-            raise SystemExit("mbs agent-tools requires --list, --call, or --request")
-    except AgentToolError as exc:
-        raise SystemExit(str(exc)) from exc
+        except AgentToolError as exc:
+            if args.json:
+                _print_json(error_envelope(tool_name if isinstance(tool_name, str) else None, exc))
+                return 2
+            raise
+    elif args.call:
+        arguments = _load_config(args.args)
+        try:
+            payload = success_envelope(args.call, call_agent_tool(args.call, arguments))
+        except AgentToolError as exc:
+            if args.json:
+                _print_json(error_envelope(args.call, exc))
+                return 2
+            raise
+    else:
+        raise CliInputError("mbs agent-tools requires --list, --call, or --request")
 
     if args.json or args.call or args.request:
         _print_json(payload)
@@ -611,11 +650,44 @@ def _cmd_make_response_template(args: argparse.Namespace) -> int:
 def _load_json_or_inline(value: str) -> Any:
     p = Path(value)
     if p.exists():
-        return json.loads(p.read_text(encoding="utf-8"))
+        return _loads_json_text(p.read_text(encoding="utf-8-sig"), source=str(p))
+    if _looks_like_json_path(value):
+        raise CliInputError(f"JSON file not found: {value}")
     try:
-        return json.loads(value)
-    except json.JSONDecodeError:
+        return _loads_json_text(value, source="inline JSON")
+    except CliInputError:
         return value
+
+
+def _load_schema_cli(value: str | Path) -> dict[str, Any]:
+    try:
+        schema = load_schema(value)
+    except FileNotFoundError as exc:
+        raise CliInputError(f"schema file not found: {value}") from exc
+    except PermissionError as exc:
+        raise CliInputError(f"cannot read schema file: {value}") from exc
+    except json.JSONDecodeError as exc:
+        raise CliInputError(f"invalid JSON in schema {value}: line {exc.lineno} column {exc.colno}: {exc.msg}") from exc
+    except OSError as exc:
+        raise CliInputError(f"cannot read schema file {value}: {exc}") from exc
+    if not isinstance(schema, dict):
+        raise CliInputError(f"schema must be a JSON object: {value}")
+    return schema
+
+
+def _looks_like_json_path(value: str) -> bool:
+    stripped = value.strip()
+    if stripped.startswith(("{", "[")):
+        return False
+    p = Path(stripped)
+    return p.suffix.lower() in {".json", ".jsonl"} or any(sep in stripped for sep in ("/", "\\"))
+
+
+def _loads_json_text(text: str, *, source: str) -> Any:
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise CliInputError(f"invalid JSON in {source}: line {exc.lineno} column {exc.colno}: {exc.msg}") from exc
 
 
 def _load_config(value: str) -> dict[str, Any]:
@@ -623,7 +695,7 @@ def _load_config(value: str) -> dict[str, Any]:
         return {}
     p = Path(value)
     if p.exists():
-        text = p.read_text(encoding="utf-8")
+        text = p.read_text(encoding="utf-8-sig")
         suffix = p.suffix.lower()
     else:
         text = value
@@ -634,11 +706,13 @@ def _load_config(value: str) -> dict[str, Any]:
     if suffix in {".yaml", ".yml"}:
         return _load_yaml_text(text)
     try:
-        data = json.loads(text)
-    except json.JSONDecodeError:
+        data = _loads_json_text(text, source=str(p) if p.exists() else "inline config")
+    except CliInputError:
+        if p.exists() and suffix == ".json":
+            raise
         data = _load_yaml_text(text)
     if not isinstance(data, dict):
-        raise SystemExit("MBS config must be a JSON/YAML object")
+        raise CliInputError("MBS config must be a JSON/YAML object")
     return data
 
 
@@ -648,7 +722,7 @@ def _load_yaml_text(text: str) -> dict[str, Any]:
 
         data = yaml.safe_load(text) or {}
         if not isinstance(data, dict):
-            raise SystemExit("MBS YAML config must be an object")
+            raise CliInputError("MBS YAML config must be an object")
         return data
     except ModuleNotFoundError:
         return _parse_simple_yaml(text)
@@ -666,7 +740,7 @@ def _parse_simple_yaml(text: str) -> dict[str, Any]:
             data[current_list].append(_parse_scalar(stripped[2:].strip()))
             continue
         if ":" not in stripped:
-            raise SystemExit(f"Unsupported YAML config line: {raw_line}")
+            raise CliInputError(f"Unsupported YAML config line: {raw_line}")
         key, raw_value = stripped.split(":", 1)
         key = key.strip()
         raw_value = raw_value.strip()
@@ -730,12 +804,28 @@ def _config_languages(config: dict[str, Any]) -> list[str | dict[str, str] | Non
 
 def _load_records(path: str) -> list[dict[str, Any]]:
     p = Path(path)
-    text = p.read_text(encoding="utf-8").strip()
+    if not p.exists():
+        raise CliInputError(f"records file not found: {path}")
+    text = p.read_text(encoding="utf-8-sig").strip()
     if not text:
         return []
     if text.startswith("["):
-        return json.loads(text)
-    return [json.loads(line) for line in text.splitlines() if line.strip()]
+        data = _loads_json_text(text, source=str(p))
+        if not isinstance(data, list):
+            raise CliInputError(f"records file must contain a JSON array or JSONL rows: {p}")
+        for index, row in enumerate(data):
+            if not isinstance(row, dict):
+                raise CliInputError(f"JSON array record must be an object at {p}[{index}]")
+        return data
+    records: list[dict[str, Any]] = []
+    for line_no, line in enumerate(text.splitlines(), start=1):
+        if not line.strip():
+            continue
+        row = _loads_json_text(line, source=f"{p}:{line_no}")
+        if not isinstance(row, dict):
+            raise CliInputError(f"JSONL record must be an object at {p}:{line_no}")
+        records.append(row)
+    return records
 
 
 def _print_json(value: Any) -> None:

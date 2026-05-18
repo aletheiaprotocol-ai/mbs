@@ -1,0 +1,9 @@
+﻿{
+  "transaction_id": "TXN-41002",
+  "amount_eur": 4800,
+  "beneficiary_age_days": 0,
+  "device_known": true,
+  "customer_history": "normal salary account, occasional international transfer",
+  "instruction": "Decide whether the agent can release the payment or must apply controls. Do not execute payment before validation."
+}
+

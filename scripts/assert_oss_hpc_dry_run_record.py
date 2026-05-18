@@ -16,7 +16,7 @@ FORBIDDEN_EVIDENCE_FLAGS = {
 
 
 def validate_record(path: Path) -> dict[str, Any]:
-    record = json.loads(path.read_text(encoding="utf-8"))
+    record = json.loads(path.read_text(encoding="utf-8-sig"))
     failures: list[str] = []
     repo_root = path.resolve().parents[2] if len(path.resolve().parents) >= 3 else Path.cwd()
 
@@ -60,7 +60,7 @@ def validate_record(path: Path) -> dict[str, Any]:
 
 
 def _count_jsonl(path: Path) -> int:
-    return sum(1 for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
+    return sum(1 for line in path.read_text(encoding="utf-8-sig").splitlines() if line.strip())
 
 
 def main(argv: list[str] | None = None) -> int:

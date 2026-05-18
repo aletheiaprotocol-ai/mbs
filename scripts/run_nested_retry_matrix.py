@@ -140,8 +140,8 @@ def main(argv: list[str] | None = None) -> int:
     }
     passed = (
         checks["case_count"] == 25
-        and checks["no_retry_schema_valid_rate"] == 0.68
-        and checks["no_retry_semantic_correct_rate"] == 0.16
+        and checks["no_retry_schema_valid_rate"] == 0.72
+        and checks["no_retry_semantic_correct_rate"] == 0.2
         and checks["mbs_retry_schema_valid_rate"] == 1.0
         and checks["mbs_retry_semantic_correct_rate"] == 1.0
         and checks["format_retry_schema_valid_rate"] == 1.0

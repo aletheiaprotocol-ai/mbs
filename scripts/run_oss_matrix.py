@@ -24,7 +24,7 @@ def main() -> int:
     parser.add_argument("--python", default=sys.executable)
     args = parser.parse_args()
 
-    matrix = json.loads(Path(args.matrix).read_text(encoding="utf-8"))
+    matrix = json.loads(Path(args.matrix).read_text(encoding="utf-8-sig"))
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     selected_models = set(args.models or [])

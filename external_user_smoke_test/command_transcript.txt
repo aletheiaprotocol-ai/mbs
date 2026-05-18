@@ -1,0 +1,687 @@
+﻿MBS external-user smoke test transcript
+Root: D:\projects\mbs-public-release
+Started: 2026-05-17T08:28:42.2662541-07:00
+
+
+## upgrade pip
+> & 'D:\projects\mbs-public-release\external_user_smoke_test\.venv_smoke\Scripts\python.exe' -m pip install --upgrade pip
+Requirement already satisfied: pip in .\external_user_smoke_test\.venv_smoke\Lib\site-packages (26.1.1)
+EXIT=0
+
+## install mbs package
+> Set-Location 'D:\projects\mbs-public-release'; & 'D:\projects\mbs-public-release\external_user_smoke_test\.venv_smoke\Scripts\python.exe' -m pip install -e .
+Obtaining file:///D:/projects/mbs-public-release
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: mbs
+  Building editable for mbs (pyproject.toml): started
+  Building editable for mbs (pyproject.toml): finished with status 'done'
+  Created wheel for mbs: filename=mbs-0.1.1-0.editable-py3-none-any.whl size=7533 sha256=8a6d3e6d6e5946e4c018a98dc585cfb59ca012f9e7701fac60bbc332d71a92b6
+  Stored in directory: C:\Users\hp\AppData\Local\Temp\pip-ephem-wheel-cache-5hb4qmm6\wheels\c7\bf\52\c701c983f74c7fbc29d8c87c1271c3e062f7f13d0b437732df
+Successfully built mbs
+Installing collected packages: mbs
+  Attempting uninstall: mbs
+    Found existing installation: mbs 0.1.1
+    Uninstalling mbs-0.1.1:
+      Successfully uninstalled mbs-0.1.1
+Successfully installed mbs-0.1.1
+EXIT=0
+
+## verify import path
+> Set-Location 'D:\projects\mbs-public-release'; & 'D:\projects\mbs-public-release\external_user_smoke_test\.venv_smoke\Scripts\python.exe' -c 'import pathlib, mbs, mbs.cli; print(pathlib.Path(mbs.__file__).resolve()); print(pathlib.Path(mbs.cli.__file__).resolve())'
+D:\projects\mbs-public-release\mbs\__init__.py
+D:\projects\mbs-public-release\mbs\cli.py
+EXIT=0
+
+## compile schema json
+> Set-Location 'D:\projects\mbs-public-release'; & 'D:\projects\mbs-public-release\external_user_smoke_test\.venv_smoke\Scripts\python.exe' -m mbs.cli compile examples/fintech_transaction_risk/schema.json --json | Tee-Object -FilePath 'D:\projects\mbs-public-release\external_user_smoke_test\artifacts\compile.json'
+{
+  "prompt": "You must respond with a valid JSON object containing the following fields:\n\n- \"transaction_id\" (required): string\n- \"risk_level\" (required): string. Must be one of: LOW, MEDIUM, HIGH, CRITICAL\n- \"decision\" (required): string. Must be one of: APPROVE, STEP_UP_AUTH, HOLD_REVIEW, BLOCK\n- \"risk_score\" (required): number\n- \"signals\" (required): array\n- \"controls\" (required): object\n- \"model_policy_version\" (required): string\n- \"reason\" (required): string\n\nDo not include any text outside the JSON object.",
+  "contract": "You must respond with a valid JSON object containing the following fields:\n\n- \"transaction_id\" (required): string\n- \"risk_level\" (required): string. Must be one of: LOW, MEDIUM, HIGH, CRITICAL\n- \"decision\" (required): string. Must be one of: APPROVE, STEP_UP_AUTH, HOLD_REVIEW, BLOCK\n- \"risk_score\" (required): number\n- \"signals\" (required): array\n- \"controls\" (required): object\n- \"model_policy_version\" (required): string\n- \"reason\" (required): string\n\nDo not include any text outside the JSON object.",
+  "token_estimate": 139,
+  "full_token_estimate": 139,
+  "savings_pct": 0.0,
+  "schema_hash": "sha256:5bf71010d3c2320f28e9eca5c0b82cf986a0da0f988fcf0d103d77803e9a1afe",
+  "contract_hash": "sha256:e0c1056e348daab06ae3873f67bb3ea4937812c5bbf3a8cd7026852672c2c4fe",
+  "field_analysis": [
+    {
+      "name": "transaction_id",
+      "type": "string",
+      "required": true,
+      "has_enum": false,
+      "enum_class": null,
+      "enum_values": null,
+      "action": "name_only"
+    },
+    {
+      "name": "risk_level",
+      "type": "string",
+      "required": true,
+      "has_enum": true,
+      "enum_class": "PARTIAL",
+      "enum_values": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "action": "specify"
+    },
+    {
+      "name": "decision",
+      "type": "string",
+      "required": true,
+      "has_enum": true,
+      "enum_class": "PAID",
+      "enum_values": [
+        "APPROVE",
+        "STEP_UP_AUTH",
+        "HOLD_REVIEW",
+        "BLOCK"
+      ],
+      "action": "specify"
+    },
+    {
+      "name": "risk_score",
+      "type": "number",
+      "required": true,
+      "has_enum": false,
+      "enum_class": null,
+      "enum_values": null,
+      "action": "name_only"
+    },
+    {
+      "name": "signals",
+      "type": "array",
+      "required": true,
+      "has_enum": false,
+      "enum_class": null,
+      "enum_values": null,
+      "action": "name_only"
+    },
+    {
+      "name": "controls",
+      "type": "object",
+      "required": true,
+      "has_enum": false,
+      "enum_class": null,
+      "enum_values": null,
+      "action": "name_only"
+    },
+    {
+      "name": "model_policy_version",
+      "type": "string",
+      "required": true,
+      "has_enum": false,
+      "enum_class": null,
+      "enum_values": null,
+      "action": "name_only"
+    },
+    {
+      "name": "reason",
+      "type": "string",
+      "required": true,
+      "has_enum": false,
+      "enum_class": null,
+      "enum_values": null,
+      "action": "name_only"
+    }
+  ],
+  "paid_enums": [
+    {
+      "name": "decision",
+      "type": "string",
+      "required": true,
+      "has_enum": true,
+      "enum_class": "PAID",
+      "enum_values": [
+        "APPROVE",
+        "STEP_UP_AUTH",
+        "HOLD_REVIEW",
+        "BLOCK"
+      ],
+      "action": "specify"
+    }
+  ],
+  "free_enums": [],
+  "partial_enums": [
+    {
+      "name": "risk_level",
+      "type": "string",
+      "required": true,
+      "has_enum": true,
+      "enum_class": "PARTIAL",
+      "enum_values": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "action": "specify"
+    }
+  ]
+}
+EXIT=0
+
+## validate valid output json
+> Set-Location 'D:\projects\mbs-public-release'; & 'D:\projects\mbs-public-release\external_user_smoke_test\.venv_smoke\Scripts\python.exe' -m mbs.cli validate --schema examples/fintech_transaction_risk/schema.json --output examples/fintech_transaction_risk/output.json --json | Tee-Object -FilePath 'D:\projects\mbs-public-release\external_user_smoke_test\artifacts\validate_valid.json'
+{
+  "json_valid": true,
+  "schema_valid": true,
+  "status": "PASS",
+  "failure_reason": null,
+  "errors": [],
+  "warnings": [],
+  "output": {
+    "transaction_id": "TXN-41002",
+    "risk_level": "MEDIUM",
+    "decision": "STEP_UP_AUTH",
+    "risk_score": 58,
+    "signals": [
+      {
+        "name": "new_payee",
+        "weight": 0.45,
+        "evidence": "Beneficiary has not been used before."
+      },
+      {
+        "name": "amount_anomaly",
+        "weight": 0.35,
+        "evidence": "Transfer is above normal customer range."
+      }
+    ],
+    "controls": {
+      "requires_manual_review": false,
+      "customer_message": "verify_identity",
+      "audit_channel": "risk-ledger"
+    },
+    "model_policy_version": "finrisk-v1",
+    "reason": "Step-up authentication is enough for a high-value new-payee payment without stronger fraud signals."
+  }
+}
+EXIT=0
+
+## validate invalid output json
+> Set-Location 'D:\projects\mbs-public-release'; & 'D:\projects\mbs-public-release\external_user_smoke_test\.venv_smoke\Scripts\python.exe' -m mbs.cli validate --schema examples/fintech_transaction_risk/schema.json --output 'D:\projects\mbs-public-release\external_user_smoke_test\artifacts\invalid_output.json' --json | Tee-Object -FilePath 'D:\projects\mbs-public-release\external_user_smoke_test\artifacts\validate_invalid.json'
+{
+  "json_valid": true,
+  "schema_valid": false,
+  "status": "FAIL",
+  "failure_reason": "missing_required_key",
+  "errors": [
+    {
+      "field": "transaction_id",
+      "type": "missing_required_key"
+    },
+    {
+      "field": "risk_score",
+      "type": "missing_required_key"
+    },
+    {
+      "field": "signals",
+      "type": "missing_required_key"
+    },
+    {
+      "field": "controls",
+      "type": "missing_required_key"
+    },
+    {
+      "field": "model_policy_version",
+      "type": "missing_required_key"
+    },
+    {
+      "field": "reason",
+      "type": "missing_required_key"
+    },
+    {
+      "field": "decision",
+      "type": "invented_enum",
+      "received": "ALLOW",
+      "allowed": [
+        "APPROVE",
+        "STEP_UP_AUTH",
+        "HOLD_REVIEW",
+        "BLOCK"
+      ]
+    },
+    {
+      "field": "schema_version",
+      "type": "extra_key"
+    }
+  ],
+  "warnings": [],
+  "output": {
+    "schema_version": "fintech_transaction_risk.v1",
+    "risk_level": "CRITICAL",
+    "decision": "ALLOW"
+  }
+}
+EXIT=1
+
+## run check mock and trace
+> Set-Location 'D:\projects\mbs-public-release'; & 'D:\projects\mbs-public-release\external_user_smoke_test\.venv_smoke\Scripts\python.exe' -m mbs.cli check --schema examples/fintech_transaction_risk/schema.json --input 'Customer transfers 4800 EUR to a new beneficiary' --output 'D:\projects\mbs-public-release\examples\fintech_transaction_risk\output.json' --model mock --trace-out 'D:\projects\mbs-public-release\external_user_smoke_test\artifacts\trace.json' --json | Tee-Object -FilePath 'D:\projects\mbs-public-release\external_user_smoke_test\artifacts\check_mock.json'
+{
+  "status": "PASS",
+  "failure_reason": null,
+  "trace_id": "mbs_trace_a501f948f8b9",
+  "schema_hash": "sha256:5bf71010d3c2320f28e9eca5c0b82cf986a0da0f988fcf0d103d77803e9a1afe",
+  "contract_hash": "sha256:eec488b8e7b32baf23570b34e927bd79826352e53f1fd14713aff827ef7befb8",
+  "output": {
+    "transaction_id": "TXN-41002",
+    "risk_level": "MEDIUM",
+    "decision": "STEP_UP_AUTH",
+    "risk_score": 58,
+    "signals": [
+      {
+        "name": "new_payee",
+        "weight": 0.45,
+        "evidence": "Beneficiary has not been used before."
+      },
+      {
+        "name": "amount_anomaly",
+        "weight": 0.35,
+        "evidence": "Transfer is above normal customer range."
+      }
+    ],
+    "controls": {
+      "requires_manual_review": false,
+      "customer_message": "verify_identity",
+      "audit_channel": "risk-ledger"
+    },
+    "model_policy_version": "finrisk-v1",
+    "reason": "Step-up authentication is enough for a high-value new-payee payment without stronger fraud signals."
+  },
+  "validation": {
+    "json_valid": true,
+    "schema_valid": true,
+    "status": "PASS",
+    "failure_reason": null,
+    "errors": [],
+    "warnings": [],
+    "output": {
+      "transaction_id": "TXN-41002",
+      "risk_level": "MEDIUM",
+      "decision": "STEP_UP_AUTH",
+      "risk_score": 58,
+      "signals": [
+        {
+          "name": "new_payee",
+          "weight": 0.45,
+          "evidence": "Beneficiary has not been used before."
+        },
+        {
+          "name": "amount_anomaly",
+          "weight": 0.35,
+          "evidence": "Transfer is above normal customer range."
+        }
+      ],
+      "controls": {
+        "requires_manual_review": false,
+        "customer_message": "verify_identity",
+        "audit_channel": "risk-ledger"
+      },
+      "model_policy_version": "finrisk-v1",
+      "reason": "Step-up authentication is enough for a high-value new-payee payment without stronger fraud signals."
+    }
+  },
+  "trace": {
+    "trace_id": "mbs_trace_a501f948f8b9",
+    "schema_hash": "sha256:5bf71010d3c2320f28e9eca5c0b82cf986a0da0f988fcf0d103d77803e9a1afe",
+    "contract_hash": "sha256:eec488b8e7b32baf23570b34e927bd79826352e53f1fd14713aff827ef7befb8",
+    "input_hash": "sha256:9e736a4e177e5956e4f55bde730285a9bac559ce82694b9cff5c222590313d61",
+    "output_hash": "sha256:7112c58335336e547622ba55b4e6001c41b4a1cb642cd8b49a927d4ffac09d88",
+    "model": "mock",
+    "mbs_version": "0.1.1",
+    "validator_version": "json_schema_v1",
+    "timestamp": "2026-05-17T15:28:58Z",
+    "status": "PASS",
+    "failure_reason": null,
+    "errors": [],
+    "tokens": {
+      "mbs_contract": 59,
+      "verbose_baseline": 139,
+      "output": 195
+    }
+  },
+  "contract": {
+    "prompt": "Respond in JSON with \"transaction_id\", \"risk_level\": LOW|MEDIUM|HIGH|CRITICAL, \"decision\": APPROVE|STEP_UP_AUTH|HOLD_REVIEW|BLOCK, \"risk_score\", \"signals\", \"controls\", \"model_policy_version\", \"reason\".",
+    "contract": "Respond in JSON with \"transaction_id\", \"risk_level\": LOW|MEDIUM|HIGH|CRITICAL, \"decision\": APPROVE|STEP_UP_AUTH|HOLD_REVIEW|BLOCK, \"risk_score\", \"signals\", \"controls\", \"model_policy_version\", \"reason\".",
+    "token_estimate": 59,
+    "full_prompt": "You must respond with a valid JSON object containing the following fields:\n\n- \"transaction_id\" (required): string\n- \"risk_level\" (required): string. Must be one of: LOW, MEDIUM, HIGH, CRITICAL\n- \"decision\" (required): string. Must be one of: APPROVE, STEP_UP_AUTH, HOLD_REVIEW, BLOCK\n- \"risk_score\" (required): number\n- \"signals\" (required): array\n- \"controls\" (required): object\n- \"model_policy_version\" (required): string\n- \"reason\" (required): string\n\nDo not include any text outside the JSON object.",
+    "full_token_estimate": 139,
+    "savings_pct": 57.6,
+    "schema_hash": "sha256:5bf71010d3c2320f28e9eca5c0b82cf986a0da0f988fcf0d103d77803e9a1afe",
+    "contract_hash": "sha256:eec488b8e7b32baf23570b34e927bd79826352e53f1fd14713aff827ef7befb8",
+    "field_analysis": [
+      {
+        "name": "transaction_id",
+        "type": "string",
+        "required": true,
+        "has_enum": false,
+        "enum_class": null,
+        "enum_values": null,
+        "action": "name_only"
+      },
+      {
+        "name": "risk_level",
+        "type": "string",
+        "required": true,
+        "has_enum": true,
+        "enum_class": "PARTIAL",
+        "enum_values": [
+          "LOW",
+          "MEDIUM",
+          "HIGH",
+          "CRITICAL"
+        ],
+        "action": "specify"
+      },
+      {
+        "name": "decision",
+        "type": "string",
+        "required": true,
+        "has_enum": true,
+        "enum_class": "PAID",
+        "enum_values": [
+          "APPROVE",
+          "STEP_UP_AUTH",
+          "HOLD_REVIEW",
+          "BLOCK"
+        ],
+        "action": "specify"
+      },
+      {
+        "name": "risk_score",
+        "type": "number",
+        "required": true,
+        "has_enum": false,
+        "enum_class": null,
+        "enum_values": null,
+        "action": "name_only"
+      },
+      {
+        "name": "signals",
+        "type": "array",
+        "required": true,
+        "has_enum": false,
+        "enum_class": null,
+        "enum_values": null,
+        "action": "name_only"
+      },
+      {
+        "name": "controls",
+        "type": "object",
+        "required": true,
+        "has_enum": false,
+        "enum_class": null,
+        "enum_values": null,
+        "action": "name_only"
+      },
+      {
+        "name": "model_policy_version",
+        "type": "string",
+        "required": true,
+        "has_enum": false,
+        "enum_class": null,
+        "enum_values": null,
+        "action": "name_only"
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "required": true,
+        "has_enum": false,
+        "enum_class": null,
+        "enum_values": null,
+        "action": "name_only"
+      }
+    ],
+    "paid_enums": [
+      {
+        "name": "decision",
+        "type": "string",
+        "required": true,
+        "has_enum": true,
+        "enum_class": "PAID",
+        "enum_values": [
+          "APPROVE",
+          "STEP_UP_AUTH",
+          "HOLD_REVIEW",
+          "BLOCK"
+        ],
+        "action": "specify"
+      }
+    ],
+    "free_enums": [],
+    "partial_enums": [
+      {
+        "name": "risk_level",
+        "type": "string",
+        "required": true,
+        "has_enum": true,
+        "enum_class": "PARTIAL",
+        "enum_values": [
+          "LOW",
+          "MEDIUM",
+          "HIGH",
+          "CRITICAL"
+        ],
+        "action": "specify"
+      }
+    ]
+  }
+}
+EXIT=0
+
+## list agent tools json
+> Set-Location 'D:\projects\mbs-public-release'; & 'D:\projects\mbs-public-release\external_user_smoke_test\.venv_smoke\Scripts\python.exe' -m mbs.cli agent-tools --list --json | Tee-Object -FilePath 'D:\projects\mbs-public-release\external_user_smoke_test\artifacts\agent_tools.json'
+[
+  {
+    "name": "mbs.compile",
+    "description": "Compile a JSON Schema into an MBS behavioral contract.",
+    "contract_version": "mbs-agent-tools/v1",
+    "stability": "stable",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "object",
+          "description": "JSON Schema object."
+        },
+        "schema_path": {
+          "type": "string",
+          "description": "Path to a JSON Schema file."
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "natural",
+            "progressive",
+            "full",
+            "strict"
+          ]
+        },
+        "task_context": {
+          "type": "string"
+        },
+        "include_free_enums": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  {
+    "name": "mbs.validate",
+    "description": "Validate a structured output against a JSON Schema.",
+    "contract_version": "mbs-agent-tools/v1",
+    "stability": "stable",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "object"
+        },
+        "schema_path": {
+          "type": "string"
+        },
+        "output": {
+          "description": "Output object or raw JSON string."
+        },
+        "output_path": {
+          "type": "string",
+          "description": "Path to an output JSON file."
+        }
+      }
+    }
+  },
+  {
+    "name": "mbs.check",
+    "description": "Compile, validate, trace, and return one MBS result.",
+    "contract_version": "mbs-agent-tools/v1",
+    "stability": "stable",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "object"
+        },
+        "schema_path": {
+          "type": "string"
+        },
+        "input": {
+          "type": "string"
+        },
+        "output": {
+          "description": "Optional output object or raw JSON string."
+        },
+        "output_path": {
+          "type": "string",
+          "description": "Optional path to an output JSON file."
+        },
+        "model": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "natural",
+            "progressive",
+            "full",
+            "strict"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "mbs.trace",
+    "description": "Create a portable MBS trace for a schema/output pair.",
+    "contract_version": "mbs-agent-tools/v1",
+    "stability": "stable",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "type": "object"
+        },
+        "schema_path": {
+          "type": "string"
+        },
+        "output": {
+          "description": "Output object or raw JSON string."
+        },
+        "output_path": {
+          "type": "string",
+          "description": "Path to an output JSON file."
+        },
+        "input": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "natural",
+            "progressive",
+            "full",
+            "strict"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "name": "mbs.cost",
+    "description": "Report cost per valid structured output from result records.",
+    "contract_version": "mbs-agent-tools/v1",
+    "stability": "stable",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "records"
+      ]
+    }
+  }
+]
+EXIT=0
+
+## call agent validation tool
+> Set-Location 'D:\projects\mbs-public-release'; & 'D:\projects\mbs-public-release\external_user_smoke_test\.venv_smoke\Scripts\python.exe' -m mbs.cli agent-tools --call mbs.validate --args 'D:\projects\mbs-public-release\external_user_smoke_test\artifacts\agent_validate_args.json' --json | Tee-Object -FilePath 'D:\projects\mbs-public-release\external_user_smoke_test\artifacts\agent_validate.json'
+{
+  "ok": true,
+  "tool": "mbs.validate",
+  "contract_version": "mbs-agent-tools/v1",
+  "mbs_version": "0.1.1",
+  "result": {
+    "json_valid": true,
+    "schema_valid": true,
+    "status": "PASS",
+    "failure_reason": null,
+    "errors": [],
+    "warnings": [],
+    "output": {
+      "transaction_id": "TXN-41002",
+      "risk_level": "MEDIUM",
+      "decision": "STEP_UP_AUTH",
+      "risk_score": 58,
+      "signals": [
+        {
+          "name": "new_payee",
+          "weight": 0.45,
+          "evidence": "Beneficiary has not been used before."
+        },
+        {
+          "name": "amount_anomaly",
+          "weight": 0.35,
+          "evidence": "Transfer is above normal customer range."
+        }
+      ],
+      "controls": {
+        "requires_manual_review": false,
+        "customer_message": "verify_identity",
+        "audit_channel": "risk-ledger"
+      },
+      "model_policy_version": "finrisk-v1",
+      "reason": "Step-up authentication is enough for a high-value new-payee payment without stronger fraud signals."
+    }
+  },
+  "error": null
+}
+EXIT=0
+
+Completed: 2026-05-17T08:28:59.4288194-07:00

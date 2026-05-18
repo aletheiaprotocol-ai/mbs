@@ -27,7 +27,7 @@ def audit_retry_attempts(paths: list[str | Path], *, max_examples: int = 20) -> 
     regressions: list[dict[str, Any]] = []
 
     for file_path in files:
-        payload = json.loads(Path(file_path).read_text(encoding="utf-8"))
+        payload = json.loads(Path(file_path).read_text(encoding="utf-8-sig"))
         for row in _case_rows(payload):
             attempts = [item for item in row.get("attempts", []) if isinstance(item, dict)]
             if len(attempts) < 2:

@@ -1,0 +1,9 @@
+{
+  "tool": "mbs.check",
+  "arguments": {
+    "schema_path": "examples/agent_workflow_transaction_review/schema.json",
+    "input": "Transaction TXN-41002: 4800 EUR to a new beneficiary. Known device. Normal account history.",
+    "output_path": "examples/agent_workflow_transaction_review/candidate_bad.json",
+    "model": "transaction-review-agent"
+  }
+}

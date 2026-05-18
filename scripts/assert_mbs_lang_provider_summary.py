@@ -23,7 +23,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     summary_path = Path(args.summary)
-    payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    payload = json.loads(summary_path.read_text(encoding="utf-8-sig"))
     failures = validate_summary(payload)
     result = {
         "status": "PASS" if not failures else "FAIL",

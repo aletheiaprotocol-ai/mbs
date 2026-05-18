@@ -1,6 +1,23 @@
 {
+  "ticket_id": "SUP-10001",
   "category": "SECURITY",
-  "priority": "HIGH",
-  "next_action": "ESCALATE",
-  "reason": "The customer reports a possible account takeover and needs urgent review."
+  "priority": "P1",
+  "route": "SECURITY_ESCALATION",
+  "customer_sentiment": "DISTRESSED",
+  "sla_minutes": 15,
+  "requires_human": true,
+  "evidence_signals": [
+    {
+      "signal": "account_takeover",
+      "severity": "CRITICAL",
+      "quote": "someone changed their password overnight"
+    }
+  ],
+  "response_plan": {
+    "first_reply": "We are locking down the account and escalating this to security support immediately.",
+    "data_to_request": ["verified contact channel", "last successful login time"],
+    "safety_note": "Do not request passwords or recovery codes."
+  },
+  "policy_version": "support-triage-v1",
+  "reason": "Unfamiliar recovery email plus loss of account access indicates possible account takeover."
 }

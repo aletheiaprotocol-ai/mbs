@@ -19,8 +19,10 @@ from .retry_audit import audit_retry_attempts
 from .trace import create_trace
 from .triage import format_triage, triage_results
 from .validate import validate_output
+from ._version import __version__
 
 __all__ = [
+    "__version__",
     "aggregate_results",
     "adapt_response_jsonl",
     "audit_retry_attempts",

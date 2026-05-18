@@ -114,7 +114,7 @@ def main() -> int:
             and _has_error(bad_payload, "debug", "extra_key"),
             "joined_enum_error_present": _has_error(bad_payload, "priority", "invalid_enum", hint="joined_enum_values"),
             "case_mismatch_error_present": _has_error(bad_payload, "priority", "invalid_enum", hint="case_mismatch"),
-            "invalid_json_error_present": _has_error(bad_payload, "$", "invalid_json"),
+            "prose_wrapped_json_warning_present": _has_warning(bad_payload, "$", "prose_wrapped_json"),
             "semantic_mismatch_present": _has_error(bad_payload, "$", "semantic_mismatch"),
         },
         "next_evidence_gate": "run real provider or OSS outputs against examples/nested_tool_arguments and classify those outputs separately",
@@ -130,7 +130,7 @@ def main() -> int:
         and manifest["checks"]["strict_extra_key_error_present"]
         and manifest["checks"]["joined_enum_error_present"]
         and manifest["checks"]["case_mismatch_error_present"]
-        and manifest["checks"]["invalid_json_error_present"]
+        and manifest["checks"]["prose_wrapped_json_warning_present"]
         and manifest["checks"]["semantic_mismatch_present"]
     )
     manifest["status"] = "PASS" if passed else "FAIL"
@@ -160,6 +160,14 @@ def _has_error(payload: dict[str, Any], field: str, error_type: str, *, hint: st
             if error.get("field") == field and error.get("type") == error_type:
                 if hint is not None and error.get("hint") != hint:
                     continue
+                return True
+    return False
+
+
+def _has_warning(payload: dict[str, Any], field: str, warning_type: str) -> bool:
+    for row in payload.get("rows", []):
+        for warning in row.get("warnings", []):
+            if warning.get("field") == field and warning.get("type") == warning_type:
                 return True
     return False
 
